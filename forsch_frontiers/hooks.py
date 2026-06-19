@@ -10,7 +10,10 @@ app_license = "mit"
 fixtures = [
     {"dt": "Role", "filters": [["role_name", "=", "FF Ops"]]},
     {"dt": "Custom DocPerm", "filters": [["role", "=", "FF Ops"]]},
-    {"dt": "Custom Field", "filters": [["fieldname", "like", "ff_%"]]},
+    # Panel field (ff_*) + the Twenty integration key. One Custom Field entry only:
+    # export overwrites custom_field.json per-doctype, so two entries would collide.
+    # Add new app custom fields to this list.
+    {"dt": "Custom Field", "filters": [["fieldname", "in", ["ff_related_records_html", "twenty_person_id"]]]},
     {"dt": "CRM Form Script", "filters": [["name", "like", "Forsch%"]]},
     {"dt": "CRM Fields Layout", "filters": [["name", "like", "CRM Lead%"]]},
 ]
