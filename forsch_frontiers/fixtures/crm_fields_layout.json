@@ -1,0 +1,9 @@
+[
+  {
+    "doctype": "CRM Fields Layout",
+    "name": "CRM Lead-Side Panel",
+    "dt": "CRM Lead",
+    "type": "Side Panel",
+    "layout": "[{\"label\": \"Details\", \"name\": \"details_section\", \"opened\": true, \"columns\": [{\"name\": \"column_kl92\", \"fields\": [\"organization\", \"website\", \"territory\", \"industry\", \"job_title\", \"source\", \"lead_owner\"]}]}, {\"label\": \"Person\", \"name\": \"person_section\", \"opened\": true, \"columns\": [{\"name\": \"column_XmW2\", \"fields\": [\"salutation\", \"first_name\", \"last_name\", \"email\", \"mobile_no\"]}]}, {\"label\": \"Forsch Records\", \"name\": \"forsch_section\", \"opened\": true, \"columns\": [{\"name\": \"column_ff01\", \"fields\": [\"ff_related_records_html\"]}]}]"
+  }
+]
