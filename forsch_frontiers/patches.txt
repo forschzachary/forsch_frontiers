@@ -1,2 +1,3 @@
 # Patches added in later tasks
+[post_model_sync]
 forsch_frontiers.patches.v0_0.add_subscription_pair_unique_index
