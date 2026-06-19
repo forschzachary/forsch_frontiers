@@ -16,6 +16,9 @@ fixtures = [
     {"dt": "Custom Field", "filters": [["fieldname", "in", ["ff_related_records_html", "twenty_person_id"]]]},
     {"dt": "CRM Form Script", "filters": [["name", "like", "Forsch%"]]},
     {"dt": "CRM Fields Layout", "filters": [["name", "like", "CRM Lead%"]]},
+    # Embedded-tool surfaces (Listmonk now; Postiz later).
+    {"dt": "Custom HTML Block", "filters": [["name", "in", ["listmonk-embed"]]]},
+    {"dt": "Workspace", "filters": [["name", "=", "Marketing"]]},
 ]
 
 # Row-level scoping: hide quarantined (needs_review) subscriptions from scoped roles.
