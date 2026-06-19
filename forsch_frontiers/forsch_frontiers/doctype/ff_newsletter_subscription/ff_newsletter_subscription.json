@@ -5,15 +5,17 @@
  "creation": "2026-06-19 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": ["external_id","title","status","source_system","synced_at","crm_lead","contact"],
+ "field_order": ["external_id","title","status","audience","source_system","synced_at","crm_lead","contact","needs_review"],
  "fields": [
   {"fieldname":"external_id","fieldtype":"Data","label":"External ID","unique":1,"reqd":1,"in_list_view":1},
   {"fieldname":"title","fieldtype":"Data","label":"Title","in_list_view":1},
   {"fieldname":"status","fieldtype":"Select","label":"Status","options":"\nActive\nUnsubscribed\nBounced","default":"Active","in_list_view":1},
+  {"fieldname":"audience","fieldtype":"Link","label":"Audience","options":"FF Audience","in_list_view":1},
   {"fieldname":"source_system","fieldtype":"Data","label":"Source System"},
   {"fieldname":"synced_at","fieldtype":"Datetime","label":"Synced At"},
   {"fieldname":"crm_lead","fieldtype":"Link","label":"CRM Lead","options":"CRM Lead"},
-  {"fieldname":"contact","fieldtype":"Link","label":"Contact","options":"Contact"}
+  {"fieldname":"contact","fieldtype":"Link","label":"Contact","options":"Contact"},
+  {"fieldname":"needs_review","fieldtype":"Check","label":"Needs Review (unmatched)","default":"0","description":"Set when ingest could not resolve a CRM Lead. Hidden from scoped agents until a human links it."}
  ],
  "links": [],
  "modified": "2026-06-19 00:00:00.000000",

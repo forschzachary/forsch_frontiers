@@ -46,5 +46,29 @@
   "share": 0,
   "submit": 0,
   "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2026-06-19 16:00:00.000000",
+  "name": "ffaudienceffops1",
+  "parent": "FF Audience",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 1,
+  "role": "FF Ops",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 1
  }
 ]

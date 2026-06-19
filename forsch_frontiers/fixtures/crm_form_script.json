@@ -1,11 +1,11 @@
 [
-  {
-    "doctype": "CRM Form Script",
-    "name": "Forsch Related Records",
-    "dt": "CRM Lead",
-    "view": "Form",
-    "enabled": 1,
-    "is_standard": 0,
-    "script": "class CRMLead {\n  async onRender() { await this.doc.trigger(\"_renderForschPanel\"); }\n  async _renderForschPanel() {\n    if (!this.doc || !this.doc.name) return;\n    let res = {};\n    try {\n      res = await this.call(\"forsch_frontiers.api.parity.related_records\",\n        { anchor_doctype: \"CRM Lead\", anchor_name: this.doc.name });\n    } catch (e) { res = {}; }\n    const data = (res && res.message) ? res.message : (res || {});\n    const labels = { newsletterSubscription: \"Newsletter\", touch: \"Social Touch\", lbActivity: \"Littlebird\" };\n    const colors = { Active: \"#16a34a\", Unsubscribed: \"#9ca3af\", Bounced: \"#dc2626\" };\n    let cards = \"\"; let total = 0;\n    for (const k of Object.keys(data || {})) {\n      for (const it of (data[k] || [])) {\n        total++;\n        const c = colors[it.status] || \"#6b7280\";\n        cards += `<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid #ececec;border-radius:8px;margin-bottom:6px;background:#fff\">`\n          + `<div><div style=\"font-weight:600;font-size:13px;color:#111\">${it.title || it.name}</div>`\n          + `<div style=\"font-size:11px;color:#9ca3af;margin-top:2px\">${labels[k] || k}</div></div>`\n          + `<span style=\"font-size:11px;font-weight:600;color:${c}\">${it.status || \"\"}</span></div>`;\n      }\n    }\n    const html = total\n      ? cards\n      : `<div style=\"font-size:12px;color:#9ca3af;padding:6px 2px\">No linked Forsch records yet.</div>`;\n    this.setFieldHtml(\"ff_related_records_html\", html);\n  }\n}"
-  }
+ {
+  "doctype": "CRM Form Script",
+  "name": "Forsch Related Records",
+  "dt": "CRM Lead",
+  "view": "Form",
+  "enabled": 1,
+  "is_standard": 0,
+  "script": "class CRMLead {\n  async onRender() { await this.doc.trigger(\"_renderForschPanel\"); }\n  async _renderForschPanel() {\n    if (!this.doc || !this.doc.name) return;\n    let res = {};\n    try {\n      res = await this.call(\"forsch_frontiers.api.parity.related_records\",\n        { anchor_doctype: \"CRM Lead\", anchor_name: this.doc.name });\n    } catch (e) { res = {}; }\n    const data = (res && res.message) ? res.message : (res || {});\n    const labels = { newsletterSubscription: \"Newsletter\", touch: \"Social Touch\", lbActivity: \"Littlebird\" };\n    const colors = { Active: \"#16a34a\", Unsubscribed: \"#9ca3af\", Bounced: \"#dc2626\" };\n    let cards = \"\"; let total = 0;\n    for (const k of Object.keys(data || {})) {\n      for (const it of (data[k] || [])) {\n        total++;\n        const c = colors[it.status] || \"#6b7280\";\n        cards += `<div style=\"display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid #ececec;border-radius:8px;margin-bottom:6px;background:#fff\">`\n          + `<div><div style=\"font-weight:600;font-size:13px;color:#111\">${it.audience_title || it.title || it.name}</div>`\n          + `<div style=\"font-size:11px;color:#9ca3af;margin-top:2px\">${labels[k] || k}</div></div>`\n          + `<span style=\"font-size:11px;font-weight:600;color:${c}\">${it.status || \"\"}</span></div>`;\n      }\n    }\n    const html = total\n      ? cards\n      : `<div style=\"font-size:12px;color:#9ca3af;padding:6px 2px\">No linked Forsch records yet.</div>`;\n    this.setFieldHtml(\"ff_related_records_html\", html);\n  }\n}"
+ }
 ]

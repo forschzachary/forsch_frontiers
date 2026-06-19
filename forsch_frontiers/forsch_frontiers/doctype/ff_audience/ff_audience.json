@@ -1,0 +1,28 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:external_id",
+ "creation": "2026-06-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["external_id","title","listmonk_list_id","description","status"],
+ "fields": [
+  {"fieldname":"external_id","fieldtype":"Data","label":"External ID","unique":1,"reqd":1,"in_list_view":1},
+  {"fieldname":"title","fieldtype":"Data","label":"Title","reqd":1,"in_list_view":1},
+  {"fieldname":"listmonk_list_id","fieldtype":"Data","label":"Listmonk List ID"},
+  {"fieldname":"description","fieldtype":"Small Text","label":"Description"},
+  {"fieldname":"status","fieldtype":"Select","label":"Status","options":"\nActive\nArchived","default":"Active","in_list_view":1}
+ ],
+ "links": [],
+ "modified": "2026-06-19 00:00:00.000000",
+ "module": "Forsch Frontiers",
+ "name": "FF Audience",
+ "owner": "Administrator",
+ "permissions": [
+  {"role":"System Manager","read":1,"write":1,"create":1,"delete":1,"report":1,"export":1,"print":1,"email":1,"share":1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}

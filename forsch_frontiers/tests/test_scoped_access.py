@@ -158,3 +158,34 @@ def test_scoped_key_denied_on_system_doctype():
         timeout=20,
     )
     assert r.status_code == 403, f"Expected 403, got {r.status_code}: {r.text}"
+
+
+# --- Slice 2 — Newsletter lane: audience scope + quarantine membrane ---
+
+def test_scoped_key_can_read_ff_audience():
+    """FF Ops has read perm on FF Audience (the new lane DocType)."""
+    r = requests.get(
+        f"{BASE}/api/resource/FF%20Audience?limit_page_length=1",
+        headers=H,
+        timeout=20,
+    )
+    assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+
+
+def test_quarantined_subscription_hidden_from_scoped_key():
+    """A scoped (non-System) key must NEVER see needs_review subscriptions.
+
+    The permission_query_condition filters them out at the query layer, so even
+    a direct /api/resource read can't surface an unmatched (blank-lead) row.
+    """
+    r = requests.get(
+        f"{BASE}/api/resource/FF%20Newsletter%20Subscription",
+        params={"fields": '["name","needs_review"]', "limit_page_length": 0},
+        headers=H,
+        timeout=20,
+    )
+    if r.status_code == 403:
+        return  # no read perm at all is also safe
+    assert r.status_code == 200, f"Expected 200 or 403, got {r.status_code}: {r.text}"
+    for row in r.json().get("data", []):
+        assert row.get("needs_review") in (0, None), f"Quarantined row leaked to scoped key: {row}"

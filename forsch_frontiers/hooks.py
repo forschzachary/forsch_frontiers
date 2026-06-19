@@ -18,6 +18,11 @@ fixtures = [
     {"dt": "CRM Fields Layout", "filters": [["name", "like", "CRM Lead%"]]},
 ]
 
+# Row-level scoping: hide quarantined (needs_review) subscriptions from scoped roles.
+permission_query_conditions = {
+    "FF Newsletter Subscription": "forsch_frontiers.permissions.subscription_query_conditions",
+}
+
 # Scheduler events for sync jobs (implemented in later phases).
 # Spike 001 hooks snippet: listmonk every 15min, postiz every 30min, littlebird every 20min.
 scheduler_events = {

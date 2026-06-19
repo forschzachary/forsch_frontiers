@@ -17,12 +17,28 @@ def related_records(anchor_doctype, anchor_name):
     for key, dt in FF_DOCTYPES.items():
         if not frappe.db.exists("DocType", dt):
             continue
-        if not frappe.get_meta(dt).has_field(link_field):
+        meta = frappe.get_meta(dt)
+        if not meta.has_field(link_field):
             continue
-        out[key] = frappe.get_all(
+        filters = {link_field: anchor_name}
+        # Never surface quarantined (unmatched) rows on the record — they're held
+        # for human review, not served to the panel or to scoped agents.
+        if meta.has_field("needs_review"):
+            filters["needs_review"] = 0
+        fields = ["name", "title", "status", "modified"]
+        if meta.has_field("audience"):
+            fields.append("audience")
+        rows = frappe.get_all(
             dt,
-            filters={link_field: anchor_name},
-            fields=["name", "title", "status", "modified"],
+            filters=filters,
+            fields=fields,
             limit_page_length=50,
         )
+        # Resolve the audience link to its display title for the panel.
+        if meta.has_field("audience"):
+            titles = dict(frappe.get_all("FF Audience", fields=["name", "title"], as_list=True))
+            for r in rows:
+                if r.get("audience"):
+                    r["audience_title"] = titles.get(r["audience"], r["audience"])
+        out[key] = rows
     return out
