@@ -1,0 +1,30 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:external_id",
+ "creation": "2026-06-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["external_id","title","status","source_system","synced_at","crm_lead","contact"],
+ "fields": [
+  {"fieldname":"external_id","fieldtype":"Data","label":"External ID","unique":1,"reqd":1,"in_list_view":1},
+  {"fieldname":"title","fieldtype":"Data","label":"Title","in_list_view":1},
+  {"fieldname":"status","fieldtype":"Select","label":"Status","options":"\nActive\nUnsubscribed\nBounced","default":"Active","in_list_view":1},
+  {"fieldname":"source_system","fieldtype":"Data","label":"Source System"},
+  {"fieldname":"synced_at","fieldtype":"Datetime","label":"Synced At"},
+  {"fieldname":"crm_lead","fieldtype":"Link","label":"CRM Lead","options":"CRM Lead"},
+  {"fieldname":"contact","fieldtype":"Link","label":"Contact","options":"Contact"}
+ ],
+ "links": [],
+ "modified": "2026-06-19 00:00:00.000000",
+ "module": "Forsch Frontiers",
+ "name": "FF Newsletter Subscription",
+ "owner": "Administrator",
+ "permissions": [
+  {"role":"System Manager","read":1,"write":1,"create":1,"delete":1,"report":1,"export":1,"print":1,"email":1,"share":1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}
