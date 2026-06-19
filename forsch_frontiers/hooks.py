@@ -8,6 +8,8 @@ app_license = "mit"
 # Fixtures — committed, not hand-edited in Desk.
 # Custom Fields with ff_ prefix, CRM Form Scripts, CRM Fields Layouts for CRM Lead.
 fixtures = [
+    {"dt": "Role", "filters": [["role_name", "=", "FF Ops"]]},
+    {"dt": "Custom DocPerm", "filters": [["role", "=", "FF Ops"]]},
     {"dt": "Custom Field", "filters": [["fieldname", "like", "ff_%"]]},
     {"dt": "CRM Form Script", "filters": [["name", "like", "Forsch%"]]},
     {"dt": "CRM Fields Layout", "filters": [["name", "like", "CRM Lead%"]]},
