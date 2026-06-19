@@ -1,7 +1,7 @@
 [
  {
   "charts": [],
-  "content": "[{\"id\": \"ffhdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Newsletters (Listmonk)</b></span>\", \"col\": 12}}, {\"id\": \"ffblk\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"listmonk-embed\", \"col\": 12}}]",
+  "content": "[{\"id\": \"ffhdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Marketing</b></span>\", \"col\": 12}}, {\"id\": \"ffsc\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Newsletters (Listmonk)\", \"col\": 4}}]",
   "custom_blocks": [],
   "docstatus": 0,
   "doctype": "Workspace",
@@ -12,7 +12,7 @@
   "is_hidden": 0,
   "label": "Marketing",
   "links": [],
-  "modified": "2026-06-19 18:48:16.267047",
+  "modified": "2026-06-19 19:16:08.099772",
   "module": "Forsch Frontiers",
   "name": "Marketing",
   "number_cards": [],
@@ -22,7 +22,25 @@
   "restrict_to_domain": null,
   "roles": [],
   "sequence_id": 0.0,
-  "shortcuts": [],
+  "shortcuts": [
+   {
+    "color": "Grey",
+    "doc_view": "",
+    "format": null,
+    "icon": null,
+    "kanban_board": null,
+    "label": "Newsletters (Listmonk)",
+    "link_to": null,
+    "parent": "Marketing",
+    "parentfield": "shortcuts",
+    "parenttype": "Workspace",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": null,
+    "type": "URL",
+    "url": "/listmonk"
+   }
+  ],
   "title": "Marketing"
  }
 ]
