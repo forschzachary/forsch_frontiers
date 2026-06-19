@@ -18,7 +18,7 @@
   {"fieldname":"needs_review","fieldtype":"Check","label":"Needs Review (unmatched)","default":"0","description":"Set when ingest could not resolve a CRM Lead. Hidden from scoped agents until a human links it."}
  ],
  "links": [],
- "modified": "2026-06-19 00:00:00.000000",
+ "modified": "2026-06-19 16:30:00.000000",
  "module": "Forsch Frontiers",
  "name": "FF Newsletter Subscription",
  "owner": "Administrator",
