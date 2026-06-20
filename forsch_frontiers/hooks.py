@@ -16,11 +16,9 @@ fixtures = [
     {"dt": "Custom Field", "filters": [["fieldname", "in", ["ff_related_records_html", "twenty_person_id"]]]},
     {"dt": "CRM Form Script", "filters": [["name", "like", "Forsch%"]]},
     {"dt": "CRM Fields Layout", "filters": [["name", "like", "CRM Lead%"]]},
-    # Embedded-tool surfaces (Listmonk now; Postiz later): a Web Page iframes the
-    # tool, a Workspace shortcut links to it. (Desk custom-block widgets don't render
-    # iframes reliably; the website renderer does.)
-    {"dt": "Web Page", "filters": [["route", "in", ["listmonk", "postiz"]]]},
-    {"dt": "Workspace", "filters": [["name", "=", "Marketing"]]},
+    # NOTE: Listmonk/Postiz are embedded as in-app CRM views (crm fork routes
+    # /newsletters, /social) — the old /listmonk + /postiz Web Pages and the Desk
+    # "Marketing" Workspace are removed.
 ]
 
 # Row-level scoping: hide quarantined (needs_review) subscriptions from scoped roles.
