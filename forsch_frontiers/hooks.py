@@ -19,7 +19,7 @@ fixtures = [
     # Embedded-tool surfaces (Listmonk now; Postiz later): a Web Page iframes the
     # tool, a Workspace shortcut links to it. (Desk custom-block widgets don't render
     # iframes reliably; the website renderer does.)
-    {"dt": "Web Page", "filters": [["route", "=", "listmonk"]]},
+    {"dt": "Web Page", "filters": [["route", "in", ["listmonk", "postiz"]]]},
     {"dt": "Workspace", "filters": [["name", "=", "Marketing"]]},
 ]
 
