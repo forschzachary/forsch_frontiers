@@ -391,7 +391,13 @@ def _sync_agent_task_to_gp(doc, method):
     try:
         gp_status = _STATUS_MAP_AGENT_TO_GP.get(doc.status, "Todo")
 
-        if not doc.gp_task:
+        # Read the link from the DB, not the in-memory doc: the link-back below
+        # uses db.set_value, which does not refresh doc.gp_task. Trusting the
+        # attribute would let a re-fire in the same request create a duplicate
+        # GP Task. Reading from the DB keeps this hook idempotent.
+        gp_task_name = frappe.db.get_value("FF Agent Task", doc.name, "gp_task")
+
+        if not gp_task_name:
             # No GP Task linked yet — create one
             gp_task = frappe.new_doc("GP Task")
             gp_task.title = doc.title or doc.name
@@ -400,13 +406,14 @@ def _sync_agent_task_to_gp(doc, method):
             if doc.gp_project:
                 gp_task.project = doc.gp_project
             gp_task.insert(ignore_permissions=True)
-            # Link back — MUST happen before any re-entry can occur (#1, #8)
-            frappe.db.set_value("FF Agent Task", doc.name, "gp_task", gp_task.name)
+            # Link back. db_set updates the DB *and* the in-memory doc, so any
+            # re-fire takes the idempotent "update" branch above.
+            doc.db_set("gp_task", gp_task.name)
         else:
             # Update existing GP Task
             frappe.db.set_value(
                 "GP Task",
-                doc.gp_task,
+                gp_task_name,
                 {
                     "title": doc.title or doc.name,
                     "status": gp_status,
