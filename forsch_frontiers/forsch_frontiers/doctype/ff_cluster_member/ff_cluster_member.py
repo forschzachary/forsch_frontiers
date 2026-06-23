@@ -1,9 +1,9 @@
-"""
-FfClusterMember — child table controller.
-"""
+\"\"\"
+FFClusterMember — child table controller.
+\"\"\"
 import frappe
 from frappe.model.document import Document
 
 
-class FfClusterMember(Document):
+class FFClusterMember(Document):
     pass

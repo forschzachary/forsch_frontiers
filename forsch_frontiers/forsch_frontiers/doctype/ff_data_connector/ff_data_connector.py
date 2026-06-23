@@ -1,9 +1,9 @@
-"""
-FfDataConnector — child table controller.
-"""
+\"\"\"
+FFDataConnector — child table controller.
+\"\"\"
 import frappe
 from frappe.model.document import Document
 
 
-class FfDataConnector(Document):
+class FFDataConnector(Document):
     pass

@@ -1,9 +1,9 @@
-"""
-FfAgentTool — child table controller.
-"""
+\"\"\"
+FFAgentTool — child table controller.
+\"\"\"
 import frappe
 from frappe.model.document import Document
 
 
-class FfAgentTool(Document):
+class FFAgentTool(Document):
     pass

@@ -1,9 +1,9 @@
-"""
-FfTaskChainAgent — child table controller.
-"""
+\"\"\"
+FFTaskChainAgent — child table controller.
+\"\"\"
 import frappe
 from frappe.model.document import Document
 
 
-class FfTaskChainAgent(Document):
+class FFTaskChainAgent(Document):
     pass

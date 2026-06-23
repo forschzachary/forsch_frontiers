@@ -1,9 +1,9 @@
-"""
-FfAgentChannel — child table controller.
-"""
+\"\"\"
+FFAgentChannel — child table controller.
+\"\"\"
 import frappe
 from frappe.model.document import Document
 
 
-class FfAgentChannel(Document):
+class FFAgentChannel(Document):
     pass
