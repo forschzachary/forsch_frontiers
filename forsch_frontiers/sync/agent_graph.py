@@ -320,8 +320,13 @@ def sync_all():
 
 @frappe.whitelist(methods=["POST"])
 def update_agent(agent_id: str, **kwargs):
-    """Update an FF Agent record. Accepts field=value pairs for: model, title, role, status, safety_level."""
-    import frappe
+    """Update an FF Agent record. Accepts field=value pairs for: model, title, role, status, safety_level.
+
+    Uses frappe.get_doc + doc.save() so that:
+    - Select-option validation runs (invalid status/role/safety_level is rejected)
+    - on_update hook fires (regenerates agents.yaml)
+    - DB and YAML stay in sync
+    """
     if not agent_id:
         frappe.throw("agent_id is required")
     docname = frappe.db.get_value("FF Agent", {"agent_id": agent_id}, "name")
@@ -331,9 +336,9 @@ def update_agent(agent_id: str, **kwargs):
     updates = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
     if not updates:
         return {"ok": False, "error": "no valid fields to update"}
-    for field, value in updates.items():
-        frappe.db.set_value("FF Agent", docname, field, value)
-    frappe.db.commit()
+    doc = frappe.get_doc("FF Agent", docname)
+    doc.update(updates)
+    doc.save()
     return {"ok": True, "agent_id": agent_id, "updated": list(updates.keys())}
 
 
