@@ -5,6 +5,9 @@ app_description = "Forsch Frontiers custom Frappe CRM app"
 app_email = "forschzachary@gmail.com"
 app_license = "mit"
 
+# Brand theme: Risograph (light) + Modern Sleek (dark), loaded into the Frappe desk.
+app_include_css = ["/assets/forsch_frontiers/css/forsch-theme.css"]
+
 # Fixtures — committed, not hand-edited in Desk.
 # Custom Fields with ff_ prefix, CRM Form Scripts, CRM Fields Layouts for CRM Lead.
 fixtures = [
@@ -43,7 +46,7 @@ scheduler_events = {
 }
 
 # Bidirectional sync: GP Task <-> FF Agent Task
-# Uses after_insert (not on_insert, which doesn't exist in Frappe) (#6).
+# Uses after_insert (not on_insert, which does not exist in Frappe) (#6).
 doc_events = {
     "GP Task": {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
@@ -54,3 +57,4 @@ doc_events = {
         "after_insert": "forsch_frontiers.sync.agent_graph._sync_agent_task_to_gp",
     },
 }
+
