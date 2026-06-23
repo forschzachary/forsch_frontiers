@@ -444,3 +444,15 @@ def _sync_agent_task_to_gp(doc, method):
         frappe.log_error("forsch_frontiers.sync._sync_agent_task_to_gp")
     finally:
         frappe.flags.in_gp_agent_sync = False
+import frappe
+
+@frappe.whitelist(methods=["POST"])
+def run_migrate():
+    """Run bench migrate to recreate missing tables."""
+    import subprocess, os
+    result = subprocess.run(
+        ["bench", "--site", "crm.forschfrontiers.com", "migrate"],
+        capture_output=True, text=True, timeout=120,
+        cwd="/app"
+    )
+    return {"ok": result.returncode == 0, "stdout": result.stdout[-500:], "stderr": result.stderr[-500:]}
