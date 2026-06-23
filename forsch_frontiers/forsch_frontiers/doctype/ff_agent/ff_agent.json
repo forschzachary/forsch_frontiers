@@ -8,7 +8,7 @@
  "field_order": [
   "agent_id", "title", "column_break_1", "status", "role",
   "section_identity", "description", "purpose",
-  "section_config", "model", "safety_level", "group",
+  "section_config", "model", "safety_level", "group", "workspace",
   "section_tools", "tools",
   "section_channels", "discord_channels"
  ],
@@ -25,6 +25,7 @@
   {"fieldname":"model","fieldtype":"Data","label":"Model","description":"e.g. gpt-5.5, glm-5.2"},
   {"fieldname":"safety_level","fieldtype":"Select","label":"Safety Level","options":"read_only\nlocal_write","default":"read_only"},
   {"fieldname":"group","fieldtype":"Data","label":"Group","description":"Optional — agents.yaml group field"},
+  {"fieldname":"workspace","fieldtype":"Data","label":"Workspace","description":"Per-agent profile home directory — generated at create time, recorded on the agent","read_only":1},
   {"fieldname":"section_tools","fieldtype":"Section Break","label":"Tools"},
   {"fieldname":"tools","fieldtype":"Table","label":"Tools","options":"FF Agent Tool"},
   {"fieldname":"section_channels","fieldtype":"Section Break","label":"Discord Channels"},

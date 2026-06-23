@@ -46,7 +46,7 @@ def write_registry():
     agents = frappe.get_all(
         "FF Agent",
         fields=["agent_id", "title", "description", "purpose", "model",
-                "safety_level", "role", "group", "status"],
+                "safety_level", "role", "group", "status", "workspace"],
     )
     registry = {
         "version": 1,
@@ -78,6 +78,7 @@ def write_registry():
             "tools": tools or [],
             "model": a.get("model") or "",
             "role": a.get("role") or "plain",
+            "workspace": a.get("workspace") or "",
         }
         if a.get("group"):
             registry["agents"][aid]["group"] = a["group"]
@@ -235,7 +236,7 @@ def get_agent_graph_manifest(cluster_id: str):
     # Read agents from DB
     all_agents = frappe.get_all("FF Agent", fields=["agent_id", "title", "description",
                                                      "purpose", "model", "safety_level",
-                                                     "role", "group", "status"])
+                                                     "role", "group", "status", "workspace"])
     agents_map = {a["agent_id"]: a for a in all_agents}
 
     cluster_agents = {}
@@ -255,6 +256,7 @@ def get_agent_graph_manifest(cluster_id: str):
             "tools": tools or [],
             "model": a.get("model") or "",
             "role": a.get("role") or "plain",
+            "workspace": a.get("workspace") or "",
         }
 
     # Shared components from DB
@@ -332,7 +334,7 @@ def update_agent(agent_id: str, **kwargs):
     docname = frappe.db.get_value("FF Agent", {"agent_id": agent_id}, "name")
     if not docname:
         frappe.throw(f"Agent '{agent_id}' not found")
-    allowed_fields = {"model", "title", "role", "status", "safety_level"}
+    allowed_fields = {"model", "title", "role", "status", "safety_level", "workspace"}
     updates = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
     if not updates:
         return {"ok": False, "error": "no valid fields to update"}
