@@ -1,0 +1,45 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:agent_id",
+ "creation": "2026-06-23 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "agent_id", "title", "column_break_1", "status", "role",
+  "section_identity", "description", "purpose",
+  "section_config", "model", "safety_level", "group",
+  "section_tools", "tools",
+  "section_channels", "discord_channels"
+ ],
+ "fields": [
+  {"fieldname":"agent_id","fieldtype":"Data","label":"Agent ID","unique":1,"reqd":1,"in_list_view":1,"description":"Machine-readable id — matches registry/agents/agents.yaml"},
+  {"fieldname":"title","fieldtype":"Data","label":"Title","in_list_view":1,"fetch_from":"agent_id"},
+  {"fieldname":"column_break_1","fieldtype":"Column Break"},
+  {"fieldname":"status","fieldtype":"Select","label":"Status","options":"blank\nplanning\nbuilding\nstable\narchived","default":"blank","in_list_view":1},
+  {"fieldname":"role","fieldtype":"Select","label":"Role","options":"plain\nbuilder\norchestrator","default":"plain","in_list_view":1},
+  {"fieldname":"section_identity","fieldtype":"Section Break","label":"Identity"},
+  {"fieldname":"description","fieldtype":"Small Text","label":"Description"},
+  {"fieldname":"purpose","fieldtype":"Text Editor","label":"Purpose"},
+  {"fieldname":"section_config","fieldtype":"Section Break","label":"Configuration"},
+  {"fieldname":"model","fieldtype":"Data","label":"Model","description":"e.g. gpt-5.5, glm-5.2"},
+  {"fieldname":"safety_level","fieldtype":"Select","label":"Safety Level","options":"read_only\nlocal_write","default":"read_only"},
+  {"fieldname":"group","fieldtype":"Data","label":"Group","description":"Optional — agents.yaml group field"},
+  {"fieldname":"section_tools","fieldtype":"Section Break","label":"Tools"},
+  {"fieldname":"tools","fieldtype":"Table","label":"Tools","options":"FF Agent Tool"},
+  {"fieldname":"section_channels","fieldtype":"Section Break","label":"Discord Channels"},
+  {"fieldname":"discord_channels","fieldtype":"Table","label":"Discord Channels","options":"FF Agent Channel"}
+ ],
+ "links": [],
+ "modified": "2026-06-23 00:00:00.000000",
+ "module": "Forsch Frontiers",
+ "name": "FF Agent",
+ "owner": "Administrator",
+ "permissions": [
+  {"role":"System Manager","read":1,"write":1,"create":1,"delete":1,"report":1,"export":1,"print":1,"email":1,"share":1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}

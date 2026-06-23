@@ -1,0 +1,43 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:cluster_id",
+ "creation": "2026-06-23 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "cluster_id", "title", "column_break_1", "status", "handoff_pct",
+  "section_goal", "goal",
+  "section_members", "members",
+  "section_config", "default_model", "max_delegation_depth",
+  "section_data", "data_connectors"
+ ],
+ "fields": [
+  {"fieldname":"cluster_id","fieldtype":"Data","label":"Cluster ID","unique":1,"reqd":1,"in_list_view":1,"description":"Machine-readable id — matches clusters/<name>/ directory"},
+  {"fieldname":"title","fieldtype":"Data","label":"Title","in_list_view":1,"fetch_from":"cluster_id"},
+  {"fieldname":"column_break_1","fieldtype":"Column Break"},
+  {"fieldname":"status","fieldtype":"Select","label":"Status","options":"blank\nplanning\nbuilding\nstable\narchived","default":"blank","in_list_view":1},
+  {"fieldname":"handoff_pct","fieldtype":"Int","label":"Handoff %","default":0,"in_list_view":1},
+  {"fieldname":"section_goal","fieldtype":"Section Break","label":"Goal"},
+  {"fieldname":"goal","fieldtype":"Small Text","label":"Goal"},
+  {"fieldname":"section_members","fieldtype":"Section Break","label":"Members"},
+  {"fieldname":"members","fieldtype":"Table","label":"Members","options":"FF Cluster Member","reqd":1},
+  {"fieldname":"section_config","fieldtype":"Section Break","label":"Configuration"},
+  {"fieldname":"default_model","fieldtype":"Data","label":"Default Model","default":"gpt-5.5"},
+  {"fieldname":"max_delegation_depth","fieldtype":"Int","label":"Max Delegation Depth","default":3},
+  {"fieldname":"section_data","fieldtype":"Section Break","label":"Data Connectors"},
+  {"fieldname":"data_connectors","fieldtype":"Table","label":"Data Connectors","options":"FF Data Connector"}
+ ],
+ "links": [],
+ "modified": "2026-06-23 00:00:00.000000",
+ "module": "Forsch Frontiers",
+ "name": "FF Agent Cluster",
+ "owner": "Administrator",
+ "permissions": [
+  {"role":"System Manager","read":1,"write":1,"create":1,"delete":1,"report":1,"export":1,"print":1,"email":1,"share":1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "title",
+ "track_changes": 1
+}
