@@ -1,0 +1,168 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:slug",
+ "creation": "2026-06-23 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "app_name",
+  "slug",
+  "column_break_1",
+  "group",
+  "icon",
+  "section_break_url",
+  "url",
+  "health_url",
+  "column_break_2",
+  "docker_container",
+  "chainlit_port",
+  "section_break_status",
+  "status",
+  "last_checked",
+  "column_break_3",
+  "enabled",
+  "model_override",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "app_name",
+   "fieldtype": "Data",
+   "label": "App Name",
+   "reqd": 1,
+   "unique": 0,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "slug",
+   "fieldtype": "Data",
+   "label": "Slug",
+   "reqd": 1,
+   "unique": 1,
+   "description": "URL-safe identifier. Used for Docker container matching and URL slugs."
+  },
+  {
+   "fieldname": "group",
+   "fieldtype": "Select",
+   "label": "Group",
+   "options": "\nHubert & companion\nWork · CRM\nADK / dev stack · Tailscale\nShelby & utilities\nInfra",
+   "default": "Infra",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "icon",
+   "fieldtype": "Data",
+   "label": "Icon",
+   "default": "box",
+   "description": "Feather icon name (e.g. message-circle, cpu, key)."
+  },
+  {
+   "fieldname": "section_break_url",
+   "fieldtype": "Section Break",
+   "label": "URLs"
+  },
+  {
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "URL",
+   "options": "URL",
+   "description": "Public-facing URL."
+  },
+  {
+   "fieldname": "health_url",
+   "fieldtype": "Data",
+   "label": "Health URL",
+   "options": "URL",
+   "description": "Endpoint to poll for status. Leave blank to skip health checks."
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "docker_container",
+   "fieldtype": "Data",
+   "label": "Docker Container",
+   "description": "Container name for docker logs (e.g. adk-bridge). Leave blank if not Docker."
+  },
+  {
+   "fieldname": "chainlit_port",
+   "fieldtype": "Int",
+   "label": "Chainlit Port",
+   "description": "Port if this app has a Chainlit instance."
+  },
+  {
+   "fieldname": "section_break_status",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nunknown\nlive\ndown\nlogin",
+   "default": "unknown",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "last_checked",
+   "fieldtype": "Datetime",
+   "label": "Last Checked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "default": 1,
+   "description": "Show in the Apps page."
+  },
+  {
+   "fieldname": "model_override",
+   "fieldtype": "Data",
+   "label": "Model Override",
+   "description": "Default LLM model for this app (e.g. mimo-v2.5). Blank = system default."
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-23 00:00:00.000000",
+ "module": "Forsch Frontiers",
+ "name": "FF App Registry",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1,
+   "share": 1
+  },
+  {
+   "role": "FF Ops",
+   "read": 1,
+   "write": 1,
+   "create": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "title_field": "app_name",
+ "track_changes": 1
+}

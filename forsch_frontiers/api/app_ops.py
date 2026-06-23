@@ -1,0 +1,269 @@
+"""App Ops API — log retrieval, health status, and model controls for the Apps cockpit.
+
+Endpoints:
+  /api/method/forsch_frontiers.api.app_ops.logs?slug=adk-bridge&lines=100
+  /api/method/forsch_frontiers.api.app_ops.status?slug=adk-bridge
+  /api/method/forsch_frontiers.api.app_ops.status_all
+  /api/method/forsch_frontiers.api.app_ops.list_models
+  /api/method/forsch_frontiers.api.app_ops.set_model  (POST: slug, model)
+"""
+
+from __future__ import annotations
+
+import os
+import subprocess
+import time
+
+import frappe
+import requests
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _get_app(slug: str) -> dict:
+    """Fetch an FF App Registry row by slug. Raises if missing."""
+    app = frappe.db.get_value(
+        "FF App Registry",
+        slug,
+        ["name", "app_name", "slug", "docker_container", "health_url",
+         "url", "icon", "group", "status", "last_checked", "enabled",
+         "model_override", "chainlit_port"],
+        as_dict=True,
+    )
+    if not app:
+        frappe.throw(f"No app registered with slug '{slug}'", frappe.DoesNotExistError)
+    return app
+
+
+# ---------------------------------------------------------------------------
+# Logs
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def logs(slug: str, lines: int = 100) -> dict:
+    """Return the last N lines of Docker logs for an app.
+
+    Requires the app to have a `docker_container` set. Runs `docker logs
+    --tail N <container>` on the host machine. Returns `{slug, container,
+    lines, output}`.
+    """
+    if frappe.session.user == "Guest":
+        raise frappe.PermissionError("Login required")
+
+    app = _get_app(slug)
+    container = app.docker_container
+    if not container:
+        frappe.throw(
+            f"'{app.app_name}' has no Docker container configured. "
+            "Set the Docker Container field in the app registry."
+        )
+
+    lines = min(max(int(lines), 1), 1000)  # clamp 1..1000
+
+    try:
+        result = subprocess.run(
+            ["docker", "logs", "--tail", str(lines), container],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        output = result.stdout + result.stderr
+    except subprocess.TimeoutExpired:
+        frappe.throw("docker logs timed out (15s)", frappe.TimeoutError)
+    except FileNotFoundError:
+        frappe.throw("docker command not found on this host", frappe.ExecutionError)
+
+    return {
+        "slug": slug,
+        "container": container,
+        "lines": lines,
+        "output": output[-50000:],  # cap at 50KB to avoid huge responses
+    }
+
+
+# ---------------------------------------------------------------------------
+# Status (single app)
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def status(slug: str) -> dict:
+    """Check health of a single app and update the registry.
+
+    If `health_url` is set, pings it (GET, 5s timeout). Otherwise marks
+    status as 'unknown'. Returns `{slug, status, last_checked, latency_ms}`.
+    """
+    if frappe.session.user == "Guest":
+        raise frappe.PermissionError("Login required")
+
+    app = _get_app(slug)
+    health_url = app.health_url
+
+    if not health_url:
+        _update_status(slug, "unknown")
+        return {"slug": slug, "status": "unknown", "last_checked": _now(), "latency_ms": None}
+
+    start = time.monotonic()
+    try:
+        r = requests.get(health_url, timeout=5, allow_redirects=False)
+        latency = int((time.monotonic() - start) * 1000)
+        code = r.status_code
+
+        if 200 <= code < 400:
+            new_status = "live"
+        elif code in (401, 403):
+            new_status = "login"
+        else:
+            new_status = "down"
+    except requests.RequestException:
+        latency = int((time.monotonic() - start) * 1000)
+        new_status = "down"
+
+    _update_status(slug, new_status)
+    return {"slug": slug, "status": new_status, "last_checked": _now(), "latency_ms": latency}
+
+
+# ---------------------------------------------------------------------------
+# Status (all apps)
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def status_all() -> list[dict]:
+    """Ping every enabled app with a health_url and return results.
+
+    Runs sequentially (not parallel) to avoid hammering the network.
+    Updates each app's status in the registry. Returns a list of status dicts.
+    """
+    if frappe.session.user == "Guest":
+        raise frappe.PermissionError("Login required")
+
+    apps = frappe.get_all(
+        "FF App Registry",
+        filters={"enabled": 1},
+        fields=["slug", "health_url"],
+    )
+
+    results = []
+    for app in apps:
+        if not app.health_url:
+            _update_status(app.slug, "unknown")
+            results.append({"slug": app.slug, "status": "unknown", "latency_ms": None})
+            continue
+
+        start = time.monotonic()
+        try:
+            r = requests.get(app.health_url, timeout=5, allow_redirects=False)
+            latency = int((time.monotonic() - start) * 1000)
+            code = r.status_code
+
+            if 200 <= code < 400:
+                new_status = "live"
+            elif code in (401, 403):
+                new_status = "login"
+            else:
+                new_status = "down"
+        except requests.RequestException:
+            latency = int((time.monotonic() - start) * 1000)
+            new_status = "down"
+
+        _update_status(app.slug, new_status)
+        results.append({"slug": app.slug, "status": new_status, "latency_ms": latency})
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Model controls
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def list_models() -> list[dict]:
+    """Fetch available models from the LiteLLM proxy.
+
+    Returns a list of `{id, owned_by}` sorted by id. Reads the proxy URL
+    and master key from environment variables LITELLM_BASE_URL and
+    LITELLM_MASTER_KEY (set on the Frappe server).
+    """
+    if frappe.session.user == "Guest":
+        raise frappe.PermissionError("Login required")
+
+    base_url = os.environ.get("LITELLM_BASE_URL", "http://127.0.0.1:4000")
+    master_key = os.environ.get("LITELLM_MASTER_KEY", "")
+
+    if not master_key:
+        frappe.throw("LITELLM_MASTER_KEY not configured on the server")
+
+    try:
+        r = requests.get(
+            f"{base_url}/v1/models",
+            headers={"Authorization": f"Bearer {master_key}"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        data = r.json().get("data", [])
+    except requests.RequestException as exc:
+        frappe.throw(f"Failed to reach LiteLLM proxy: {exc}")
+
+    models = [{"id": m["id"], "owned_by": m.get("owned_by", "")} for m in data]
+    models.sort(key=lambda m: m["id"])
+    return models
+
+
+@frappe.whitelist(methods=["POST"])
+def set_model(slug: str, model: str) -> dict:
+    """Set the model override for an app.
+
+    POST body: { "slug": "adk-bridge", "model": "mimo-v2.5" }
+    Pass model="" to clear the override (revert to system default).
+    """
+    if frappe.session.user == "Guest":
+        raise frappe.PermissionError("Login required")
+
+    app = _get_app(slug)
+
+    # Validate model exists in LiteLLM (if non-empty)
+    if model:
+        base_url = os.environ.get("LITELLM_BASE_URL", "http://127.0.0.1:4000")
+        master_key = os.environ.get("LITELLM_MASTER_KEY", "")
+        if master_key:
+            try:
+                r = requests.get(
+                    f"{base_url}/v1/models",
+                    headers={"Authorization": f"Bearer {master_key}"},
+                    timeout=10,
+                )
+                r.raise_for_status()
+                available = {m["id"] for m in r.json().get("data", [])}
+                if model not in available:
+                    frappe.throw(
+                        f"Model '{model}' not found in LiteLLM. "
+                        f"Available: {', '.join(sorted(available)[:10])}..."
+                    )
+            except requests.RequestException:
+                pass  # If LiteLLM is unreachable, skip validation
+
+    frappe.db.set("FF App Registry", slug, {"model_override": model or ""})
+    frappe.db.commit()
+
+    return {
+        "slug": slug,
+        "model_override": model or None,
+        "app_name": app.app_name,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Internal
+# ---------------------------------------------------------------------------
+
+def _update_status(slug: str, status: str) -> None:
+    frappe.db.set("FF App Registry", slug, {
+        "status": status,
+        "last_checked": _now(),
+    })
+    frappe.db.commit()
+
+
+def _now() -> str:
+    return frappe.utils.now_datetime().isoformat()
