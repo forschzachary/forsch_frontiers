@@ -318,6 +318,25 @@ def sync_all():
     return {"ok": True, "files": [{"type": t, "path": p} for t, p in results]}
 
 
+@frappe.whitelist(methods=["POST"])
+def update_agent(agent_id: str, **kwargs):
+    """Update an FF Agent record. Accepts field=value pairs for: model, title, role, status, safety_level."""
+    import frappe
+    if not agent_id:
+        frappe.throw("agent_id is required")
+    docname = frappe.db.get_value("FF Agent", {"agent_id": agent_id}, "name")
+    if not docname:
+        frappe.throw(f"Agent '{agent_id}' not found")
+    allowed_fields = {"model", "title", "role", "status", "safety_level"}
+    updates = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
+    if not updates:
+        return {"ok": False, "error": "no valid fields to update"}
+    for field, value in updates.items():
+        frappe.db.set_value("FF Agent", docname, field, value)
+    frappe.db.commit()
+    return {"ok": True, "agent_id": agent_id, "updated": list(updates.keys())}
+
+
 # ── Bidirectional GP Task <-> FF Agent Task sync ──
 #
 # Uses a SINGLE shared flag to prevent re-entry from either direction (#1).
