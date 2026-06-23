@@ -202,12 +202,51 @@ def list_models() -> list[dict]:
         )
         r.raise_for_status()
         data = r.json().get("data", [])
-    except requests.RequestException as exc:
-        frappe.throw(f"Failed to reach LiteLLM proxy: {exc}")
+    except requests.RequestException:
+        # Proxy unreachable — return hardcoded fallback (updated 2026-06-23)
+        return _FALLBACK_MODELS
 
     models = [{"id": m["id"], "owned_by": m.get("owned_by", "")} for m in data]
     models.sort(key=lambda m: m["id"])
     return models
+
+
+# Hardcoded fallback when LiteLLM proxy is unreachable from the Frappe server.
+# Update this list when models change (add/remove in LiteLLM).
+_FALLBACK_MODELS = [
+    {"id": "cerebras-120b", "owned_by": ""},
+    {"id": "deepseek-v4-flash", "owned_by": ""},
+    {"id": "deepseek-v4-pro", "owned_by": ""},
+    {"id": "gemini-2.5-flash", "owned_by": ""},
+    {"id": "gemini-2.5-flash-aistudio", "owned_by": ""},
+    {"id": "gemini-2.5-pro", "owned_by": ""},
+    {"id": "gemini-3-flash-preview", "owned_by": ""},
+    {"id": "gemini-3-pro-preview", "owned_by": ""},
+    {"id": "gemma-4-12b-zachscpu", "owned_by": ""},
+    {"id": "gemma4-31b", "owned_by": ""},
+    {"id": "glm-5.1", "owned_by": ""},
+    {"id": "glm-5.2", "owned_by": ""},
+    {"id": "gpt-5.5", "owned_by": ""},
+    {"id": "groq-compound", "owned_by": ""},
+    {"id": "groq-gpt-oss-120b", "owned_by": ""},
+    {"id": "groq-llama-70b", "owned_by": ""},
+    {"id": "groq-qwen3-32b", "owned_by": ""},
+    {"id": "groq-qwen3.6-27b", "owned_by": ""},
+    {"id": "kimi-k2.6", "owned_by": ""},
+    {"id": "kimi-k2.7-code", "owned_by": ""},
+    {"id": "laguna-m.1", "owned_by": ""},
+    {"id": "laguna-xs.2", "owned_by": ""},
+    {"id": "mimo-v2-flash", "owned_by": ""},
+    {"id": "mimo-v2.5", "owned_by": ""},
+    {"id": "mimo-v2.5-pro", "owned_by": ""},
+    {"id": "minimax-m2.7", "owned_by": ""},
+    {"id": "minimax-m3", "owned_by": ""},
+    {"id": "ministral-3b", "owned_by": ""},
+    {"id": "nvidia-deepseek-v4-flash", "owned_by": ""},
+    {"id": "nvidia-llama-70b", "owned_by": ""},
+    {"id": "openrouter-nemotron-ultra-550b", "owned_by": ""},
+    {"id": "qwen3-coder-480b", "owned_by": ""},
+]
 
 
 @frappe.whitelist(methods=["POST"])
