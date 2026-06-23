@@ -114,6 +114,9 @@ def status(slug: str) -> dict:
             new_status = "live"
         elif code in (401, 403):
             new_status = "login"
+        elif 400 <= code < 500:
+            # 4xx (except auth) means the service is responding — just no content at root
+            new_status = "live"
         else:
             new_status = "down"
     except requests.RequestException:
@@ -161,6 +164,9 @@ def status_all() -> list[dict]:
                 new_status = "live"
             elif code in (401, 403):
                 new_status = "login"
+            elif 400 <= code < 500:
+                # 4xx (except auth) means the service is responding
+                new_status = "live"
             else:
                 new_status = "down"
         except requests.RequestException:
