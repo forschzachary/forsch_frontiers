@@ -278,6 +278,99 @@ def list_clusters():
 
 @frappe.whitelist(methods=["POST"])
 def sync_all():
-    """Trigger a full sync: CRM → YAML. Called after bulk changes or on demand."""
+    """Trigger a full sync: CRM -> YAML. Called after bulk changes or on demand."""
     results = write_all()
     return {"ok": True, "files": [{"type": t, "path": p} for t, p in results]}
+# ── Bidirectional GP Task <-> FF Agent Task sync ──
+
+def _sync_gp_to_agent_task(doc, method):
+    """doc_events hook: when GP Task is created/updated, sync to FF Agent Task."""
+    if frappe.flags.in_sync_agent_task:
+        return
+    frappe.flags.in_sync_agent_task = True
+    try:
+        # Find existing FF Agent Task linked to this GP Task
+        existing = frappe.get_all(
+            "FF Agent Task",
+            filters={"gp_task": doc.name},
+            fields=["name"],
+            limit=1,
+        )
+        status_map = {
+            "Open": "pending",
+            "Working": "in_progress",
+            "Completed": "completed",
+            "Cancelled": "cancelled",
+        }
+        agent_status = status_map.get(doc.status, "pending")
+
+        if existing:
+            # Update existing FF Agent Task
+            frappe.db.set_value(
+                "FF Agent Task",
+                existing[0].name,
+                {
+                    "title": doc.title or doc.name,
+                    "status": agent_status,
+                    "description": doc.description or "",
+                },
+            )
+        else:
+            # Create new FF Agent Task
+            agent_task = frappe.new_doc("FF Agent Task")
+            agent_task.title = doc.title or doc.name
+            agent_task.status = agent_status
+            agent_task.gp_task = doc.name
+            agent_task.gp_project = doc.project or ""
+            agent_task.description = doc.description or ""
+            agent_task.insert(ignore_permissions=True)
+        frappe.db.commit()
+    finally:
+        frappe.flags.in_sync_agent_task = False
+
+
+def _sync_agent_task_to_gp(doc, method):
+    """doc_events hook: when FF Agent Task is created/updated, sync to GP Task."""
+    if frappe.flags.in_sync_gp_task:
+        return
+    frappe.flags.in_sync_gp_task = True
+    try:
+        if not doc.gp_task:
+            # No GP Task linked yet - create one
+            gp_task = frappe.new_doc("GP Task")
+            gp_task.title = doc.title or doc.name
+            gp_task.description = doc.description or ""
+            status_map = {
+                "pending": "Open",
+                "in_progress": "Working",
+                "completed": "Completed",
+                "cancelled": "Cancelled",
+            }
+            gp_task.status = status_map.get(doc.status, "Open")
+            if doc.gp_project:
+                gp_task.project = doc.gp_project
+            gp_task.insert(ignore_permissions=True)
+            # Link back
+            frappe.db.set_value("FF Agent Task", doc.name, "gp_task", gp_task.name)
+            frappe.db.commit()
+        else:
+            # Update existing GP Task
+            status_map = {
+                "pending": "Open",
+                "in_progress": "Working",
+                "completed": "Completed",
+                "cancelled": "Cancelled",
+            }
+            gp_status = status_map.get(doc.status, "Open")
+            frappe.db.set_value(
+                "GP Task",
+                doc.gp_task,
+                {
+                    "title": doc.title or doc.name,
+                    "status": gp_status,
+                    "description": doc.description or "",
+                },
+            )
+            frappe.db.commit()
+    finally:
+        frappe.flags.in_sync_gp_task = False
