@@ -1,25 +1,28 @@
 """
 Agent Graph Sync — bidirectional bridge between CRM DocTypes and YAML files.
 
-CRM (Frappe DB)  ←→  YAML (forsch_frontiers repo)  ←→  live-agent-graph (manifest)
+CRM (Frappe DB)  <->  YAML (forsch_frontiers repo)  <->  live-agent-graph (manifest)
 
 Flow:
   1. User edits FF Agent / FF Agent Cluster / FF Agent Task in CRM Desk
   2. Controller on_update hook calls sync.write_*()
   3. YAML files are written to the forsch_frontiers app directory
   4. Git commit + push (optional, configurable)
-  5. Cloud box pulls → live-agent-graph rebuilds manifest → graph UI updates
+  5. Cloud box pulls -> live-agent-graph rebuilds manifest -> graph UI updates
 
 Reverse flow (CRM reads YAML):
   1. Whitelisted API endpoint reads YAML files
   2. Returns structured data for the graph server
 """
 
+import logging
 import os
 from pathlib import Path
 
 import frappe
 import yaml
+
+log = logging.getLogger("forsch_frontiers.sync")
 
 # Where YAML files live inside the forsch_frontiers app
 # On Railway, this is /home/frappe/frappe-bench/apps/forsch_frontiers/forsch_frontiers/
@@ -110,19 +113,15 @@ def write_cluster(cluster_id: str):
         + yaml.dump(cluster_yaml, default_flow_style=False, sort_keys=False, allow_unicode=True)
     )
 
-    # project.md
-    status = doc.status or "blank"
-    handoff = doc.handoff_pct or 0
-    goal = doc.goal or ""
-    project_md = f"""---
-goal: "{goal}"
-status: {status}
-handoff_pct: {handoff}
-data_connectors:
-"""
-    for c in connectors:
-        project_md += f"  - {c}\n"
-    project_md += f"---\n# {doc.cluster_id}\n\n{doc.goal or 'New cluster.'}\n"
+    # project.md — use yaml.dump for front-matter to avoid injection (#5)
+    front_matter = {
+        "goal": doc.goal or "",
+        "status": doc.status or "blank",
+        "handoff_pct": doc.handoff_pct or 0,
+        "data_connectors": connectors,
+    }
+    fm_yaml = yaml.dump(front_matter, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    project_md = f"---\n{fm_yaml}---\n# {doc.cluster_id}\n\n{doc.goal or 'New cluster.'}\n"
     (cluster_dir / "project.md").write_text(project_md)
 
     return str(cluster_dir)
@@ -144,8 +143,8 @@ def write_tasks(cluster_id: str):
         chain_rows = frappe.get_all(
             "FF Task Chain Agent",
             filters={"parent": t["name"]},
-            fields=["agent", "order"],
-            order_by="order",
+            fields=["agent", "seq"],
+            order_by="seq",
         )
         chain = [c["agent"] for c in chain_rows]
         task_list.append({
@@ -168,7 +167,8 @@ def write_tasks(cluster_id: str):
 def write_shared():
     """Write shared/components.yaml from the registry tools/models."""
     ensure_dirs()
-    agents = frappe.get_all("FF Agent", fields=["agent_id"])
+    # Single query to get all agents with their models (#9 optimization)
+    agents = frappe.get_all("FF Agent", fields=["agent_id", "model"])
     all_tools = set()
     all_models = set()
     for a in agents:
@@ -179,9 +179,8 @@ def write_shared():
             pluck="tool_name",
         )
         all_tools.update(tools)
-        model = frappe.get_value("FF Agent", a["agent_id"], "model")
-        if model:
-            all_models.add(model)
+        if a.get("model"):
+            all_models.add(a["model"])
 
     shared = {
         "tools": sorted(all_tools),
@@ -221,59 +220,95 @@ def write_all():
 
 @frappe.whitelist(methods=["GET"])
 def get_agent_graph_manifest(cluster_id: str):
-    """Return the full agent graph manifest for a cluster (reads YAML, not DB)."""
-    ensure_dirs()
-    cluster_dir = CLUSTERS_DIR / cluster_id
-    if not cluster_dir.exists():
+    """Return the full agent graph manifest for a cluster.
+
+    Reads from DB directly (not from YAML files) to survive redeployments (#4).
+    """
+    # Verify cluster exists
+    if not frappe.db.exists("FF Agent Cluster", {"cluster_id": cluster_id}):
         frappe.throw(f"Cluster '{cluster_id}' not found", frappe.DoesNotExistError)
 
-    # Read YAML files
-    registry_yaml = REGISTRY_DIR / "agents.yaml"
-    shared_yaml = SHARED_DIR / "components.yaml"
-    cluster_yaml = cluster_dir / "cluster.yaml"
+    # Read cluster config from DB
+    cluster_doc = frappe.get_doc("FF Agent Cluster", {"cluster_id": cluster_id})
+    member_ids = [m.agent for m in cluster_doc.members]
 
-    registry = yaml.safe_load(registry_yaml.read_text()) if registry_yaml.exists() else {}
-    shared = yaml.safe_load(shared_yaml.read_text()) if shared_yaml.exists() else {}
-    cluster_def = yaml.safe_load(cluster_yaml.read_text()) if cluster_yaml.exists() else {}
+    # Read agents from DB
+    all_agents = frappe.get_all("FF Agent", fields=["agent_id", "title", "description",
+                                                     "purpose", "model", "safety_level",
+                                                     "role", "group", "status"])
+    agents_map = {a["agent_id"]: a for a in all_agents}
 
-    agents = registry.get("agents", {})
-    member_ids = cluster_def.get("members", [])
-    cluster_agents = {aid: agents[aid] for aid in member_ids if aid in agents}
+    cluster_agents = {}
+    for aid in member_ids:
+        if aid not in agents_map:
+            continue
+        a = agents_map[aid]
+        tools = frappe.get_all("FF Agent Tool", filters={"parent": aid},
+                               fields=["tool_name"], pluck="tool_name")
+        channels = frappe.get_all("FF Agent Channel", filters={"parent": aid},
+                                  fields=["channel_name"], pluck="channel_name")
+        cluster_agents[aid] = {
+            "description": a.get("description") or "",
+            "discord_channels": channels or [],
+            "safety_level": a.get("safety_level") or "read_only",
+            "purpose": a.get("purpose") or "",
+            "tools": tools or [],
+            "model": a.get("model") or "",
+            "role": a.get("role") or "plain",
+        }
+
+    # Shared components from DB
+    all_tools = set()
+    all_models = set()
+    for a in all_agents:
+        tools = frappe.get_all("FF Agent Tool", filters={"parent": a["agent_id"]},
+                               fields=["tool_name"], pluck="tool_name")
+        all_tools.update(tools)
+        if a.get("model"):
+            all_models.add(a["model"])
+
+    shared = {
+        "tools": sorted(all_tools),
+        "models": sorted(all_models),
+        "connections": {
+            "github": "GitHub (OAuth)",
+            "resend": "Resend (email)",
+            "cloudflare-global": "Cloudflare (global)",
+            "frappe-crm": "Frappe CRM (ff-ops-prod)",
+        },
+    }
+
+    cluster_config = {
+        "name": cluster_doc.cluster_id,
+        "description": cluster_doc.goal or "",
+        "members": member_ids,
+        "config": {"default_model": cluster_doc.default_model or "gpt-5.5"},
+    }
 
     return {
         "cluster": cluster_id,
         "agents": cluster_agents,
         "shared": shared,
-        "cluster_config": cluster_def,
+        "cluster_config": cluster_config,
     }
 
 
 @frappe.whitelist(methods=["GET"])
 def list_clusters():
-    """Return all clusters with their project.md front-matter."""
-    ensure_dirs()
-    result = []
-    if not CLUSTERS_DIR.exists():
-        return result
-    for d in sorted(CLUSTERS_DIR.iterdir()):
-        if not d.is_dir():
-            continue
-        cluster_yaml = d / "cluster.yaml"
-        project_md = d / "project.md"
-        if not cluster_yaml.exists():
-            continue
-        entry = {"name": d.name}
-        if project_md.exists():
-            text = project_md.read_text()
-            if text.startswith("---"):
-                end = text.find("---", 3)
-                if end > 0:
-                    fm = yaml.safe_load(text[3:end]) or {}
-                    entry["goal"] = fm.get("goal", "")
-                    entry["status"] = fm.get("status", "")
-                    entry["handoff_pct"] = fm.get("handoff_pct", 0)
-        result.append(entry)
-    return result
+    """Return all clusters from the DB (not from YAML files) (#4)."""
+    clusters = frappe.get_all(
+        "FF Agent Cluster",
+        fields=["cluster_id", "goal", "status", "handoff_pct"],
+    )
+    return [
+        {
+            "name": c["cluster_id"],
+            "goal": c.get("goal") or "",
+            "status": c.get("status") or "",
+            "handoff_pct": c.get("handoff_pct") or 0,
+        }
+        for c in clusters
+    ]
 
 
 @frappe.whitelist(methods=["POST"])
@@ -281,32 +316,49 @@ def sync_all():
     """Trigger a full sync: CRM -> YAML. Called after bulk changes or on demand."""
     results = write_all()
     return {"ok": True, "files": [{"type": t, "path": p} for t, p in results]}
+
+
 # ── Bidirectional GP Task <-> FF Agent Task sync ──
+#
+# Uses a SINGLE shared flag to prevent re-entry from either direction (#1).
+# No frappe.db.commit() inside hooks — Frappe handles the commit (#2).
+# Wrapped in try/except to prevent cross-app exceptions from breaking Gameplan (#3).
+# Only syncs GP Tasks that have a project set (scoped, not every GP Task ever) (#3).
+
+_STATUS_MAP_GP_TO_AGENT = {
+    "Backlog": "Draft",
+    "Todo": "Queued",
+    "In Progress": "In Progress",
+    "Done": "Complete",
+    "Canceled": "Failed",
+}
+
+_STATUS_MAP_AGENT_TO_GP = {v: k for k, v in _STATUS_MAP_GP_TO_AGENT.items()}
+
 
 def _sync_gp_to_agent_task(doc, method):
-    """doc_events hook: when GP Task is created/updated, sync to FF Agent Task."""
-    if frappe.flags.in_sync_agent_task:
+    """doc_events hook: when GP Task is created/updated, sync to FF Agent Task.
+
+    Only syncs GP Tasks that are associated with an FF Agent Cluster project (#3).
+    """
+    if frappe.flags.in_gp_agent_sync:
         return
-    frappe.flags.in_sync_agent_task = True
+    frappe.flags.in_gp_agent_sync = True
     try:
-        # Find existing FF Agent Task linked to this GP Task
+        # Scope: only sync GP Tasks that have a project set (#3)
+        # GP Tasks without a project are internal Gameplan work, not agent tasks.
+        if not doc.project:
+            return
+
         existing = frappe.get_all(
             "FF Agent Task",
             filters={"gp_task": doc.name},
             fields=["name"],
             limit=1,
         )
-        gp_to_agent = {
-            "Backlog": "Draft",
-            "Todo": "Queued",
-            "In Progress": "In Progress",
-            "Done": "Complete",
-            "Canceled": "Failed",
-        }
-        agent_status = gp_to_agent.get(doc.status, "Draft")
+        agent_status = _STATUS_MAP_GP_TO_AGENT.get(doc.status, "Draft")
 
         if existing:
-            # Update existing FF Agent Task
             frappe.db.set_value(
                 "FF Agent Task",
                 existing[0].name,
@@ -317,7 +369,6 @@ def _sync_gp_to_agent_task(doc, method):
                 },
             )
         else:
-            # Create new FF Agent Task
             agent_task = frappe.new_doc("FF Agent Task")
             agent_task.title = doc.title or doc.name
             agent_task.status = agent_status
@@ -325,46 +376,34 @@ def _sync_gp_to_agent_task(doc, method):
             agent_task.gp_project = doc.project or ""
             agent_task.description = doc.description or ""
             agent_task.insert(ignore_permissions=True)
-        frappe.db.commit()
+    except Exception:
+        log.error("Failed to sync GP Task %s to FF Agent Task", doc.name, exc_info=True)
+        frappe.log_error("forsch_frontiers.sync._sync_gp_to_agent_task")
     finally:
-        frappe.flags.in_sync_agent_task = False
+        frappe.flags.in_gp_agent_sync = False
 
 
 def _sync_agent_task_to_gp(doc, method):
     """doc_events hook: when FF Agent Task is created/updated, sync to GP Task."""
-    if frappe.flags.in_sync_gp_task:
+    if frappe.flags.in_gp_agent_sync:
         return
-    frappe.flags.in_sync_gp_task = True
+    frappe.flags.in_gp_agent_sync = True
     try:
+        gp_status = _STATUS_MAP_AGENT_TO_GP.get(doc.status, "Todo")
+
         if not doc.gp_task:
-            # No GP Task linked yet - create one
+            # No GP Task linked yet — create one
             gp_task = frappe.new_doc("GP Task")
             gp_task.title = doc.title or doc.name
             gp_task.description = doc.description or ""
-            agent_to_gp = {
-                "Draft": "Backlog",
-                "Queued": "Todo",
-                "In Progress": "In Progress",
-                "Complete": "Done",
-                "Failed": "Canceled",
-            }
-            gp_task.status = agent_to_gp.get(doc.status, "Todo")
+            gp_task.status = gp_status
             if doc.gp_project:
                 gp_task.project = doc.gp_project
             gp_task.insert(ignore_permissions=True)
-            # Link back
+            # Link back — MUST happen before any re-entry can occur (#1, #8)
             frappe.db.set_value("FF Agent Task", doc.name, "gp_task", gp_task.name)
-            frappe.db.commit()
         else:
             # Update existing GP Task
-            agent_to_gp = {
-                "Draft": "Backlog",
-                "Queued": "Todo",
-                "In Progress": "In Progress",
-                "Complete": "Done",
-                "Failed": "Canceled",
-            }
-            gp_status = agent_to_gp.get(doc.status, "Todo")
             frappe.db.set_value(
                 "GP Task",
                 doc.gp_task,
@@ -374,6 +413,8 @@ def _sync_agent_task_to_gp(doc, method):
                     "description": doc.description or "",
                 },
             )
-            frappe.db.commit()
+    except Exception:
+        log.error("Failed to sync FF Agent Task %s to GP Task", doc.name, exc_info=True)
+        frappe.log_error("forsch_frontiers.sync._sync_agent_task_to_gp")
     finally:
-        frappe.flags.in_sync_gp_task = False
+        frappe.flags.in_gp_agent_sync = False

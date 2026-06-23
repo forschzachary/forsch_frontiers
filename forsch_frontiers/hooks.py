@@ -43,13 +43,14 @@ scheduler_events = {
 }
 
 # Bidirectional sync: GP Task <-> FF Agent Task
+# Uses after_insert (not on_insert, which doesn't exist in Frappe) (#6).
 doc_events = {
     "GP Task": {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
-        "on_insert": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
+        "after_insert": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
     },
     "FF Agent Task": {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_agent_task_to_gp",
-        "on_insert": "forsch_frontiers.sync.agent_graph._sync_agent_task_to_gp",
+        "after_insert": "forsch_frontiers.sync.agent_graph._sync_agent_task_to_gp",
     },
 }
