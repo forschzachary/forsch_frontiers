@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Outfit:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Epilogue:wght@400;500;700&display=swap');
+
+/* =========================================================
+   Forsch Frontiers Brand Theme
+   Light  → Risograph Screenprint   (#FF3399 pink on cream)
+   Dark   → Modern Sleek            (#C9816B terracotta on ink)
+   ========================================================= */
+
+/* ── Light: Risograph Screenprint ── */
+[data-theme=light] {
+  --primary:              #FF3399;
+  --primary-color:        #FF3399;
+  --bg-color:             #FFFBEB;
+  --fg-color:             #ffffff;
+  --card-bg:              #ffffff;
+  --subtle-accent:        #fff7db;
+  --subtle-fg:            #fff0c0;
+  --text-color:           #121E36;
+  --heading-color:        #121E36;
+  --text-muted:           rgba(18,30,54,.55);
+  --text-light:           rgba(18,30,54,.4);
+  --text-neutral:         #121E36;
+  --border-color:         rgba(18,30,54,.13);
+  --dark-border-color:    rgba(18,30,54,.22);
+  --table-border-color:   rgba(18,30,54,.1);
+  --highlight-color:      #fff7db;
+  --control-bg:           #ffffff;
+  --control-bg-on-gray:   #f8f3e0;
+  --btn-primary:          #FFFBEB;
+  --btn-default-bg:       rgba(18,30,54,.06);
+  --btn-default-hover-bg: rgba(18,30,54,.11);
+  --sidebar-select-color: rgba(255,51,153,.1);
+  --font-stack:           'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --progress-bar-bg:      #FF3399;
+  --focus-default:        0 0 0 2px rgba(255,51,153,.3);
+  --checkbox-gradient:    linear-gradient(180deg,#FF3399 -124.51%,#FF3399 100%);
+}
+
+[data-theme=light] h1,
+[data-theme=light] h2,
+[data-theme=light] h3,
+[data-theme=light] h4,
+[data-theme=light] .page-title,
+[data-theme=light] .form-section-heading,
+[data-theme=light] .sidebar-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+}
+
+[data-theme=light] .btn-primary {
+  background-color: #FF3399;
+  border-color:     #FF3399;
+  color:            #FFFBEB;
+}
+[data-theme=light] .btn-primary:hover,
+[data-theme=light] .btn-primary:focus {
+  background-color: #d9007a;
+  border-color:     #d9007a;
+  color:            #FFFBEB;
+}
+
+/* ── Dark: Modern Sleek ── */
+[data-theme=dark] {
+  --primary:              #C9816B;
+  --primary-color:        #C9816B;
+  --bg-color:             #0E0707;
+  --fg-color:             #100808;
+  --card-bg:              #120a0a;
+  --subtle-accent:        #180c0c;
+  --subtle-fg:            #1e1010;
+  --surface-menu-bar:     #0a0404;
+  --text-color:           #F3EFE7;
+  --heading-color:        #F3EFE7;
+  --text-muted:           #899D99;
+  --text-light:           rgba(243,239,231,.38);
+  --text-dark:            #F3EFE7;
+  --text-neutral:         #F3EFE7;
+  --border-color:         rgba(243,239,231,.09);
+  --dark-border-color:    rgba(243,239,231,.16);
+  --table-border-color:   rgba(243,239,231,.07);
+  --highlight-color:      rgba(243,239,231,.04);
+  --control-bg:           #180c0c;
+  --control-bg-on-gray:   #1e1010;
+  --modal-bg:             #120a0a;
+  --popover-bg:           #120a0a;
+  --btn-primary:          #F3EFE7;
+  --btn-default-bg:       #1e1010;
+  --btn-default-hover-bg: #281414;
+  --sidebar-select-color: rgba(201,129,107,.12);
+  --scrollbar-thumb-color: rgba(201,129,107,.3);
+  --scrollbar-track-color: #180c0c;
+  --font-stack:           'Epilogue', -apple-system, BlinkMacSystemFont, sans-serif;
+  --progress-bar-bg:      #C9816B;
+  --focus-default:        0 0 0 2px rgba(201,129,107,.35);
+  --checkbox-gradient:    linear-gradient(180deg,#C9816B -124.51%,#C9816B 100%);
+  --ink-blue-link:        #7FD3DF;
+}
+
+[data-theme=dark] h1,
+[data-theme=dark] h2,
+[data-theme=dark] h3,
+[data-theme=dark] h4,
+[data-theme=dark] .page-title,
+[data-theme=dark] .form-section-heading {
+  font-family: 'Instrument Serif', serif;
+  font-style:  italic;
+  font-weight: 400;
+}
+
+[data-theme=dark] .btn-primary {
+  background-color: #C9816B;
+  border-color:     #C9816B;
+  color:            #F3EFE7;
+}
+[data-theme=dark] .btn-primary:hover,
+[data-theme=dark] .btn-primary:focus {
+  background-color: #b56a52;
+  border-color:     #b56a52;
+  color:            #F3EFE7;
+}
+
+[data-theme=dark] a:not(.btn):not(.nav-link):not(.sidebar-item) {
+  color: #7FD3DF;
+}
+[data-theme=dark] a:not(.btn):not(.nav-link):not(.sidebar-item):hover {
+  color: #5ec5d2;
+}
+
+[data-theme=dark] .standard-sidebar-item.selected,
+[data-theme=dark] .sidebar-item.active {
+  border-left: 2px solid #C9816B;
+}
