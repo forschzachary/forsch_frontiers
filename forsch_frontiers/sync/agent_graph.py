@@ -296,13 +296,14 @@ def _sync_gp_to_agent_task(doc, method):
             fields=["name"],
             limit=1,
         )
-        status_map = {
-            "Open": "pending",
-            "Working": "in_progress",
-            "Completed": "completed",
-            "Cancelled": "cancelled",
+        gp_to_agent = {
+            "Backlog": "pending",
+            "Todo": "pending",
+            "In Progress": "in_progress",
+            "Done": "completed",
+            "Canceled": "cancelled",
         }
-        agent_status = status_map.get(doc.status, "pending")
+        agent_status = gp_to_agent.get(doc.status, "pending")
 
         if existing:
             # Update existing FF Agent Task
@@ -340,13 +341,13 @@ def _sync_agent_task_to_gp(doc, method):
             gp_task = frappe.new_doc("GP Task")
             gp_task.title = doc.title or doc.name
             gp_task.description = doc.description or ""
-            status_map = {
-                "pending": "Open",
-                "in_progress": "Working",
-                "completed": "Completed",
-                "cancelled": "Cancelled",
+            agent_to_gp = {
+                "pending": "Todo",
+                "in_progress": "In Progress",
+                "completed": "Done",
+                "cancelled": "Canceled",
             }
-            gp_task.status = status_map.get(doc.status, "Open")
+            gp_task.status = agent_to_gp.get(doc.status, "Todo")
             if doc.gp_project:
                 gp_task.project = doc.gp_project
             gp_task.insert(ignore_permissions=True)
@@ -355,13 +356,13 @@ def _sync_agent_task_to_gp(doc, method):
             frappe.db.commit()
         else:
             # Update existing GP Task
-            status_map = {
-                "pending": "Open",
-                "in_progress": "Working",
-                "completed": "Completed",
-                "cancelled": "Cancelled",
+            agent_to_gp = {
+                "pending": "Todo",
+                "in_progress": "In Progress",
+                "completed": "Done",
+                "cancelled": "Canceled",
             }
-            gp_status = status_map.get(doc.status, "Open")
+            gp_status = agent_to_gp.get(doc.status, "Todo")
             frappe.db.set_value(
                 "GP Task",
                 doc.gp_task,
