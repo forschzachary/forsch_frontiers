@@ -297,13 +297,13 @@ def _sync_gp_to_agent_task(doc, method):
             limit=1,
         )
         gp_to_agent = {
-            "Backlog": "pending",
-            "Todo": "pending",
-            "In Progress": "in_progress",
-            "Done": "completed",
-            "Canceled": "cancelled",
+            "Backlog": "Draft",
+            "Todo": "Queued",
+            "In Progress": "In Progress",
+            "Done": "Complete",
+            "Canceled": "Failed",
         }
-        agent_status = gp_to_agent.get(doc.status, "pending")
+        agent_status = gp_to_agent.get(doc.status, "Draft")
 
         if existing:
             # Update existing FF Agent Task
@@ -342,10 +342,11 @@ def _sync_agent_task_to_gp(doc, method):
             gp_task.title = doc.title or doc.name
             gp_task.description = doc.description or ""
             agent_to_gp = {
-                "pending": "Todo",
-                "in_progress": "In Progress",
-                "completed": "Done",
-                "cancelled": "Canceled",
+                "Draft": "Backlog",
+                "Queued": "Todo",
+                "In Progress": "In Progress",
+                "Complete": "Done",
+                "Failed": "Canceled",
             }
             gp_task.status = agent_to_gp.get(doc.status, "Todo")
             if doc.gp_project:
@@ -357,10 +358,11 @@ def _sync_agent_task_to_gp(doc, method):
         else:
             # Update existing GP Task
             agent_to_gp = {
-                "pending": "Todo",
-                "in_progress": "In Progress",
-                "completed": "Done",
-                "cancelled": "Canceled",
+                "Draft": "Backlog",
+                "Queued": "Todo",
+                "In Progress": "In Progress",
+                "Complete": "Done",
+                "Failed": "Canceled",
             }
             gp_status = agent_to_gp.get(doc.status, "Todo")
             frappe.db.set_value(
