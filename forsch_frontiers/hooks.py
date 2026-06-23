@@ -46,15 +46,17 @@ scheduler_events = {
 }
 
 # Bidirectional sync: GP Task <-> FF Agent Task
-# Uses after_insert (not on_insert, which does not exist in Frappe) (#6).
+# on_update fires on BOTH insert and update in Frappe, so it alone covers
+# creation + edits. Do NOT also register after_insert: that double-fires the
+# hook on insert, and the FF->GP path would then create a duplicate GP Task
+# (the link-back's db.set_value doesn't refresh the in-memory doc.gp_task, so
+# the second fire still sees it empty and creates another GP Task).
 doc_events = {
     "GP Task": {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
-        "after_insert": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
     },
     "FF Agent Task": {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_agent_task_to_gp",
-        "after_insert": "forsch_frontiers.sync.agent_graph._sync_agent_task_to_gp",
     },
 }
 
