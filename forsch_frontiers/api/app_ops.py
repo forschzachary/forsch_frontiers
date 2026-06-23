@@ -243,7 +243,7 @@ def set_model(slug: str, model: str) -> dict:
             except requests.RequestException:
                 pass  # If LiteLLM is unreachable, skip validation
 
-    frappe.db.set("FF App Registry", slug, {"model_override": model or ""})
+    frappe.db.set_value("FF App Registry", slug, {"model_override": model or ""})
     frappe.db.commit()
 
     return {
@@ -258,7 +258,7 @@ def set_model(slug: str, model: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def _update_status(slug: str, status: str) -> None:
-    frappe.db.set("FF App Registry", slug, {
+    frappe.db.set_value("FF App Registry", slug, {
         "status": status,
         "last_checked": _now(),
     })
