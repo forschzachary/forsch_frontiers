@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Outfit:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Epilogue:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Outfit:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Epilogue:wght@400;500;700&family=Barlow+Condensed:wght@700;900&family=Press+Start+2P&display=swap');
 
 /* =========================================================
    Forsch Frontiers Brand Theme
    Light  → Risograph Screenprint   (#FF3399 pink on cream)
    Dark   → Modern Sleek            (#C9816B terracotta on ink)
+   Secret → RCT2 Retro              (Konami code: ↑↑↓↓←→←→BA)
    ========================================================= */
 
 /* ── Light: Risograph Screenprint ── */
@@ -129,4 +130,75 @@
 [data-theme=dark] .standard-sidebar-item.selected,
 [data-theme=dark] .sidebar-item.active {
   border-left: 2px solid #C9816B;
+}
+
+/* ── Secret: RCT2 Retro (Konami code: ↑↑↓↓←→←→BA) ── */
+[data-theme=rct2] {
+  --primary:              #C8271A;
+  --primary-color:        #C8271A;
+  --bg-color:             #F5E6C8;
+  --fg-color:             #ffffff;
+  --card-bg:              #ffffff;
+  --subtle-accent:        #ede0c0;
+  --subtle-fg:            #e0d0a8;
+  --text-color:           #2A1A0E;
+  --heading-color:        #2A1A0E;
+  --text-muted:           rgba(42,26,14,.55);
+  --text-light:           rgba(42,26,14,.4);
+  --text-neutral:         #2A1A0E;
+  --border-color:         rgba(123,74,30,.3);
+  --dark-border-color:    rgba(123,74,30,.5);
+  --table-border-color:   rgba(123,74,30,.2);
+  --highlight-color:      #ede0c0;
+  --control-bg:           #ffffff;
+  --control-bg-on-gray:   #f5e6c8;
+  --btn-primary:          #F5E6C8;
+  --btn-default-bg:       rgba(42,26,14,.06);
+  --btn-default-hover-bg: rgba(42,26,14,.12);
+  --sidebar-select-color: rgba(200,39,26,.12);
+  --font-stack:           'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --progress-bar-bg:      #C8271A;
+  --focus-default:        0 0 0 2px rgba(200,39,26,.35);
+  --checkbox-gradient:    linear-gradient(180deg,#C8271A -124.51%,#C8271A 100%);
+  --link-color:           #1B5FA8;
+  --surface-menu-bar:     #2A1A0E;
+}
+
+[data-theme=rct2] h1,
+[data-theme=rct2] h2,
+[data-theme=rct2] h3,
+[data-theme=rct2] h4,
+[data-theme=rct2] .page-title,
+[data-theme=rct2] .form-section-heading,
+[data-theme=rct2] .sidebar-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+[data-theme=rct2] .btn-primary {
+  background-color: #C8271A;
+  border-color:     #C8271A;
+  color:            #F5E6C8;
+  font-family:      'Barlow Condensed', sans-serif;
+  font-weight:      900;
+  text-transform:   uppercase;
+  letter-spacing:   1px;
+}
+[data-theme=rct2] .btn-primary:hover,
+[data-theme=rct2] .btn-primary:focus {
+  background-color: #a51e13;
+  border-color:     #a51e13;
+  color:            #F5E6C8;
+}
+
+[data-theme=rct2] .standard-sidebar-item.selected,
+[data-theme=rct2] .sidebar-item.active {
+  border-left: 3px solid #C8271A;
+  background: rgba(200,39,26,.1);
+}
+
+[data-theme=rct2] a:not(.btn):not(.nav-link):not(.sidebar-item) {
+  color: #1B5FA8;
 }
