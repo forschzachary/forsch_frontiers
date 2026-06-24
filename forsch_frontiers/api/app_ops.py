@@ -309,11 +309,12 @@ BENCH_TIMEOUT = 120  # seconds
 
 
 @frappe.whitelist(methods=["POST"])
-def run_bench(bench_cmd: str) -> dict:
+def run_bench(bench_cmd: str, skip_site: bool = False) -> dict:
     """Run a bench command on the Railway server.
 
-    POST body: { "bench_cmd": "migrate" } or { "bench_cmd": "set-config scheduler_log_retention 14" }
-    The --site flag is added automatically.
+    POST body: { "bench_cmd": "migrate" } or { "bench_cmd": "restart", "skip_site": true }
+    The --site flag is added automatically unless skip_site=true (for global
+    commands like restart, clear-cache, etc. that don't accept --site).
     Returns {bench_cmd, stdout, stderr, code, bench_path}.
 
     Admin-only. This is a remote shell bridge — do not expose to untrusted users.
@@ -342,7 +343,10 @@ def run_bench(bench_cmd: str) -> dict:
         extra = shlex.split(bench_cmd)
     except ValueError as e:
         frappe.throw(f"Could not parse bench_cmd: {e}")
-    argv = ["bench", "--site", site, *extra]
+    if skip_site:
+        argv = ["bench", *extra]
+    else:
+        argv = ["bench", "--site", site, *extra]
 
     # Audit every invocation of this admin RCE bridge.
     frappe.logger("forsch_frontiers.run_bench").warning(
