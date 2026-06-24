@@ -308,32 +308,32 @@ BENCH_TIMEOUT = 120  # seconds
 
 
 @frappe.whitelist(methods=["POST"])
-def run_bench(cmd: str) -> dict:
+def run_bench(bench_cmd: str) -> dict:
     """Run a bench command on the Railway server.
 
-    POST body: { "cmd": "migrate" } or { "cmd": "set-config scheduler_log_retention 14" }
+    POST body: { "bench_cmd": "migrate" } or { "bench_cmd": "set-config scheduler_log_retention 14" }
     The --site flag is added automatically.
-    Returns {cmd, stdout, stderr, code, bench_path}.
+    Returns {bench_cmd, stdout, stderr, code, bench_path}.
 
     Admin-only. This is a remote shell bridge — do not expose to untrusted users.
     """
     if frappe.session.user != "Administrator":
         raise frappe.PermissionError("Administrator only")
 
-    if not cmd or not cmd.strip():
-        frappe.throw("cmd is required")
+    if not bench_cmd or not bench_cmd.strip():
+        frappe.throw("bench_cmd is required")
 
-    cmd = cmd.strip()
+    bench_cmd = bench_cmd.strip()
 
     # Safety: block obviously dangerous commands
     _blocked = ["rm -rf", "drop ", "shutdown", "reboot", "init 0", "init 6"]
-    cmd_lower = cmd.lower()
+    cmd_lower = bench_cmd.lower()
     for bad in _blocked:
         if bad in cmd_lower:
             frappe.throw(f"Blocked dangerous command pattern: {bad}")
 
     site = frappe.local.site
-    full_cmd = f"bench --site {site} {cmd}"
+    full_cmd = f"bench --site {site} {bench_cmd}"
 
     try:
         result = subprocess.run(
@@ -352,7 +352,7 @@ def run_bench(cmd: str) -> dict:
         frappe.throw(f"Failed to run command: {e}", frappe.ExecutionError)
 
     return {
-        "cmd": cmd,
+        "cmd": bench_cmd,
         "full_cmd": full_cmd,
         "stdout": stdout,
         "stderr": stderr,
