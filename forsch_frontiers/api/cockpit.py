@@ -22,7 +22,11 @@ import requests
 from werkzeug.wrappers import Response
 
 COCKPIT_BASE = "https://hubert-cloud-sp6.tail818cf8.ts.net:8443"
-GRAPH_BASE = "http://127.0.0.1:8888"
+# Graph server (box) reached via Cloudflare tunnel (graph.forschfrontiers.com ->
+# cloudflared -> 127.0.0.1:8888). The CRM runs on Railway, so it cannot use the
+# box's localhost. Auth = GRAPH_SERVER_SECRET (fail-closed). Cloudflare Access is
+# planned as a second gate once Zero Trust is enabled on the account.
+GRAPH_BASE = os.environ.get("GRAPH_BASE", "https://graph.forschfrontiers.com")
 _ALLOWED_PREFIXES = ("/", "/api/")
 _GRAPH_SECRET = os.environ.get("GRAPH_SERVER_SECRET", "")
 
