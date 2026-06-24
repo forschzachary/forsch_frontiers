@@ -304,7 +304,7 @@ def set_model(slug: str, model: str) -> dict:
 # Bench bridge — run bench commands remotely
 # ---------------------------------------------------------------------------
 
-BENCH_PATH = "/home/frappe/frappe-bench"
+BENCH_PATH = os.environ.get("BENCH_PATH", "/home/frappe/frappe-bench")
 BENCH_TIMEOUT = 120  # seconds
 
 

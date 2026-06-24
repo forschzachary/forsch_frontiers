@@ -21,7 +21,9 @@ import frappe
 import requests
 from werkzeug.wrappers import Response
 
-COCKPIT_BASE = "https://hubert-cloud-sp6.tail818cf8.ts.net:8443"
+# Builder cockpit (:8780) reached via Cloudflare tunnel (cockpit.forschfrontiers.com),
+# not the tailnet Funnel — so the CRM (on Railway) and any browser can reach it.
+COCKPIT_BASE = os.environ.get("COCKPIT_BASE", "https://cockpit.forschfrontiers.com")
 # Graph server (box) reached via Cloudflare tunnel (graph.forschfrontiers.com ->
 # cloudflared -> 127.0.0.1:8888). The CRM runs on Railway, so it cannot use the
 # box's localhost. Auth = GRAPH_SERVER_SECRET (fail-closed). Cloudflare Access is

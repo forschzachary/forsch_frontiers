@@ -4,6 +4,8 @@ Run on the Railway Frappe instance:
   bench --site crm.forschfrontiers.com execute forsch_frontiers.forsch_frontiers.page.apps_page.seed
 """
 
+import os
+
 import frappe
 
 APPS = [
@@ -28,8 +30,8 @@ APPS = [
      "url": "https://crm.forschfrontiers.com/g", "icon": "message-square"},
 
     # ADK / dev stack · Tailscale
-    {"app_name": "Builder cockpit", "slug": "builder-cockpit", "group": "ADK / dev stack · Tailscale",
-     "url": "http://100.120.21.13:8780", "icon": "tool"},
+    {"app_name": "Builder cockpit", "slug": "builder-cockpit", "group": "ADK / dev stack",
+     "url": os.environ.get("COCKPIT_URL", "https://cockpit.forschfrontiers.com"), "icon": "tool"},
     {"app_name": "LiteLLM proxy", "slug": "litellm-proxy", "group": "ADK / dev stack · Tailscale",
      "url": "http://100.120.21.13:4000", "icon": "cpu",
      "health_url": "http://100.120.21.13:4000/health/readiness"},
