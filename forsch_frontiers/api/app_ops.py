@@ -12,6 +12,7 @@ Endpoints:
 from __future__ import annotations
 
 import os
+import shlex
 import subprocess
 import time
 
@@ -333,12 +334,25 @@ def run_bench(bench_cmd: str) -> dict:
             frappe.throw(f"Blocked dangerous command pattern: {bad}")
 
     site = frappe.local.site
-    full_cmd = f"bench --site {site} {bench_cmd}"
+    # No shell: split into an argv list so shell metacharacters (; && | `) cannot
+    # inject. The denylist above is defense-in-depth only — the real boundary is
+    # the Administrator gate (bench execute can still run Python; that is inherent
+    # to bench, which is why this endpoint is admin-only and audited).
+    try:
+        extra = shlex.split(bench_cmd)
+    except ValueError as e:
+        frappe.throw(f"Could not parse bench_cmd: {e}")
+    argv = ["bench", "--site", site, *extra]
+
+    # Audit every invocation of this admin RCE bridge.
+    frappe.logger("forsch_frontiers.run_bench").warning(
+        "run_bench by %s: %s", frappe.session.user, bench_cmd
+    )
 
     try:
         result = subprocess.run(
-            full_cmd,
-            shell=True,
+            argv,
+            shell=False,
             capture_output=True,
             text=True,
             timeout=BENCH_TIMEOUT,
@@ -353,7 +367,7 @@ def run_bench(bench_cmd: str) -> dict:
 
     return {
         "cmd": bench_cmd,
-        "full_cmd": full_cmd,
+        "argv": argv,
         "stdout": stdout,
         "stderr": stderr,
         "code": result.returncode,
