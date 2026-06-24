@@ -28,6 +28,13 @@
     try { return localStorage.getItem('theme') || 'light'; } catch(e) { return 'light'; }
   }
 
+  const obs = new MutationObserver(() => {
+    if (rct2Active && document.documentElement.getAttribute('data-theme') !== 'rct2') {
+      document.documentElement.setAttribute('data-theme', 'rct2');
+    }
+  });
+  obs.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme', 'class']});
+
   document.addEventListener('keydown', function (e) {
     if (e.keyCode === KONAMI[pos]) {
       pos++;
