@@ -6,6 +6,7 @@ Endpoints:
   /api/method/forsch_frontiers.api.app_ops.status_all
   /api/method/forsch_frontiers.api.app_ops.list_models
   /api/method/forsch_frontiers.api.app_ops.set_model  (POST: slug, model)
+  /api/method/forsch_frontiers.api.app_ops.run_bench  (POST: cmd)
 """
 
 from __future__ import annotations
@@ -295,6 +296,68 @@ def set_model(slug: str, model: str) -> dict:
         "slug": slug,
         "model_override": model or None,
         "app_name": app.app_name,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Bench bridge — run bench commands remotely
+# ---------------------------------------------------------------------------
+
+BENCH_PATH = "/home/frappe/frappe-bench"
+BENCH_TIMEOUT = 120  # seconds
+
+
+@frappe.whitelist(methods=["POST"])
+def run_bench(cmd: str) -> dict:
+    """Run a bench command on the Railway server.
+
+    POST body: { "cmd": "migrate" } or { "cmd": "set-config scheduler_log_retention 14" }
+    The --site flag is added automatically.
+    Returns {cmd, stdout, stderr, code, bench_path}.
+
+    Admin-only. This is a remote shell bridge — do not expose to untrusted users.
+    """
+    if frappe.session.user != "Administrator":
+        raise frappe.PermissionError("Administrator only")
+
+    if not cmd or not cmd.strip():
+        frappe.throw("cmd is required")
+
+    cmd = cmd.strip()
+
+    # Safety: block obviously dangerous commands
+    _blocked = ["rm -rf", "drop ", "shutdown", "reboot", "init 0", "init 6"]
+    cmd_lower = cmd.lower()
+    for bad in _blocked:
+        if bad in cmd_lower:
+            frappe.throw(f"Blocked dangerous command pattern: {bad}")
+
+    site = frappe.local.site
+    full_cmd = f"bench --site {site} {cmd}"
+
+    try:
+        result = subprocess.run(
+            full_cmd,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=BENCH_TIMEOUT,
+            cwd=BENCH_PATH,
+        )
+        stdout = result.stdout[-50000:] if result.stdout else ""
+        stderr = result.stderr[-50000:] if result.stderr else ""
+    except subprocess.TimeoutExpired:
+        frappe.throw(f"Command timed out after {BENCH_TIMEOUT}s", frappe.TimeoutError)
+    except Exception as e:
+        frappe.throw(f"Failed to run command: {e}", frappe.ExecutionError)
+
+    return {
+        "cmd": cmd,
+        "full_cmd": full_cmd,
+        "stdout": stdout,
+        "stderr": stderr,
+        "code": result.returncode,
+        "bench_path": BENCH_PATH,
     }
 
 
