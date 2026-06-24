@@ -1,15 +1,15 @@
 """Reverse-proxy the ADK Builder Cockpit and the Live Agent Graph behind CRM login.
 
-The Cockpit runs on the cloud box, exposed publicly via Tailscale Funnel but
+The Cockpit runs on the cloud box, exposed publicly via Cloudflare tunnel but
 gated by a secret token (env ``COCKPIT_TOKEN``). ``embed`` requires a logged-in
 Frappe user and forwards the request (any path + method + body) to the Cockpit
 with the token attached server-side, returning the response verbatim. The token
 never reaches the browser, and only authenticated CRM users can drive the tool.
 
-The Graph server runs on the cloud box at ``127.0.0.1:8888``. ``graph_chat``
-requires a logged-in Frappe user with the ``FF Ops`` role and forwards chat
-messages to Hubert with a shared secret. The secret never reaches the browser,
-and only authorized operators get a Hubert shell.
+The Graph server runs on the cloud box at ``127.0.0.1:8888``. ``graph_embed``
+requires a logged-in Frappe user and proxies requests to the graph server with
+the shared secret attached server-side. Mutating operations (POST/PUT/DELETE)
+additionally require the FF Ops or System Manager role.
 """
 
 from __future__ import annotations
@@ -135,39 +135,3 @@ def graph_embed(path: str = "/"):
         status=502,
         mimetype="text/html",
     )
-    """Forward a chat message to Hubert on the graph server.
-
-    Requires: logged-in user with FF Ops or System Manager role.
-    The graph server is bound to 127.0.0.1 — only reachable from this box.
-    Shared secret (GRAPH_SERVER_SECRET) authenticates the proxy to the server.
-    """
-    if frappe.session.user == "Guest":
-        raise frappe.PermissionError("Login required")
-
-    roles = frappe.get_roles(frappe.session.user)
-    if "System Manager" not in roles and "FF Ops" not in roles:
-        raise frappe.PermissionError("FF Ops role required for Hubert chat")
-
-    if not _GRAPH_SECRET:
-        frappe.throw("GRAPH_SERVER_SECRET not configured on server")
-
-    payload = {
-        "message": message,
-        "principal": frappe.session.user,
-    }
-    if session_id:
-        payload["session_id"] = session_id
-
-    try:
-        r = requests.post(
-            f"{GRAPH_BASE}/chat",
-            json=payload,
-            headers={
-                "X-Graph-Secret": _GRAPH_SECRET,
-                "Content-Type": "application/json",
-            },
-            timeout=120,
-        )
-        return r.json()
-    except requests.RequestException as exc:
-        return {"ok": False, "error": f"graph server unreachable: {exc}"}
