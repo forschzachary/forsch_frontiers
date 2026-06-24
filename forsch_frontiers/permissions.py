@@ -1,16 +1,21 @@
-# Forsch Frontiers — row-level permission query conditions.
+"""Website permission hooks for forsch_frontiers."""
+
 import frappe
+from frappe.utils import get_url
 
 
-def subscription_query_conditions(user=None):
-    """Append a WHERE condition that hides quarantined (needs_review) subscriptions
-    from every role except System Manager / Administrator.
+def update_website_context(context):
+    """Require login for agent-builder Web Page.
 
-    This is defense beyond the parity API: even a direct
-    `/api/resource/FF Newsletter Subscription` query from a scoped key cannot see
-    unmatched rows. Frappe appends the returned string to the query's WHERE clause.
+    The graph_embed endpoint already checks frappe.session.user != "Guest",
+    but the Web Page itself was public — so unauthenticated users got a 200
+    page shell with a 403 iframe. This hook redirects to login first, so the
+    iframe always has a session cookie.
+
+    context.login_required = True doesn't work here — that pattern only fires
+    for doctypes that implement get_context() (like HelpArticle), not for
+    generic Web Pages. We redirect directly instead.
     """
-    user = user or frappe.session.user
-    if user == "Administrator" or "System Manager" in frappe.get_roles(user):
-        return ""
-    return "`tabFF Newsletter Subscription`.needs_review = 0"
+    if context.get("route") == "agent-builder" and frappe.session.user == "Guest":
+        frappe.local.flags.redirect_location = f"/login?redirect-to=/agent-builder"
+        raise frappe.Redirect

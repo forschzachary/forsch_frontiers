@@ -53,6 +53,8 @@ scheduler_events = {
 # hook on insert, and the FF->GP path would then create a duplicate GP Task
 # (the link-back's db.set_value doesn't refresh the in-memory doc.gp_task, so
 # the second fire still sees it empty and creates another GP Task).
+update_website_context = ["forsch_frontiers.permissions.update_website_context"]
+
 doc_events = {
     "GP Task": {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
