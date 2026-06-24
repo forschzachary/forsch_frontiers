@@ -6,7 +6,9 @@ app_email = "forschzachary@gmail.com"
 app_license = "mit"
 
 # Brand theme: Risograph (light) + Modern Sleek (dark), loaded into the Frappe desk.
+# Secret third mode: RCT2 Retro, activated via Konami code (↑↑↓↓←→←→BA).
 app_include_css = ["/assets/forsch_frontiers/css/forsch-theme.css"]
+app_include_js  = ["/assets/forsch_frontiers/js/forsch-easter.js"]
 
 # Fixtures — committed, not hand-edited in Desk.
 # Custom Fields with ff_ prefix, CRM Form Scripts, CRM Fields Layouts for CRM Lead.
@@ -59,4 +61,3 @@ doc_events = {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_agent_task_to_gp",
     },
 }
-
