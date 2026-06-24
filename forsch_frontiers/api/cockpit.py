@@ -74,8 +74,67 @@ def embed(path: str = "/"):
     )
 
 
-@frappe.whitelist(methods=["POST"])
-def graph_chat(message: str, session_id: str | None = None):
+@frappe.whitelist(methods=["GET", "POST"])
+def graph_embed(path: str = "/"):
+    """Reverse-proxy the Live Agent Graph behind CRM login.
+
+    Requires a logged-in Frappe user. Forwards the request (any path + method
+    + body) to the graph server at GRAPH_BASE with X-Graph-Secret attached
+    server-side. The secret never reaches the browser, and only authenticated
+    CRM users can view the graph.
+
+    Mutating paths (POST/PUT/DELETE) require the FF Ops or System Manager role.
+    Read-only paths (GET) are open to any logged-in user.
+
+    KEEP embed() intact for rollback — this is a parallel endpoint.
+    """
+    if frappe.session.user == "Guest":
+        raise frappe.PermissionError("Login required")
+
+    if not path.startswith("/"):
+        path = "/" + path
+    if not any(path == p or path.startswith(p) for p in _ALLOWED_PREFIXES):
+        raise frappe.PermissionError("Path not allowed")
+
+    method = (frappe.request.method or "GET").upper()
+
+    # Mutating methods require ops role
+    if method in ("POST", "PUT", "DELETE", "PATCH"):
+        roles = frappe.get_roles(frappe.session.user)
+        if "System Manager" not in roles and "FF Ops" not in roles:
+            raise frappe.PermissionError("FF Ops role required for mutating operations")
+
+    if not _GRAPH_SECRET:
+        frappe.throw("GRAPH_SERVER_SECRET not configured on server")
+
+    body = frappe.request.get_data() if method in ("POST", "PUT", "PATCH") else None
+    headers = {"X-Graph-Secret": _GRAPH_SECRET}
+    if method in ("POST", "PUT", "PATCH"):
+        headers["Content-Type"] = frappe.request.headers.get(
+            "Content-Type", "application/json"
+        )
+
+    last_exc = None
+    for _ in range(3):  # Cold tunnel connection can reset; retry briefly.
+        try:
+            r = requests.request(
+                method,
+                GRAPH_BASE + path,
+                headers=headers,
+                data=body,
+                timeout=30,
+            )
+            ctype = r.headers.get("content-type", "text/html").split(";")[0]
+            return Response(r.content, status=r.status_code, mimetype=ctype)
+        except requests.RequestException as exc:
+            last_exc = exc
+
+    msg = frappe.utils.escape_html(str(last_exc))
+    return Response(
+        f"<h3>Agent Graph unreachable</h3><pre>{msg}</pre>".encode(),
+        status=502,
+        mimetype="text/html",
+    )
     """Forward a chat message to Hubert on the graph server.
 
     Requires: logged-in user with FF Ops or System Manager role.
