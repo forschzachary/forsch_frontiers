@@ -125,7 +125,14 @@ def graph_embed(path: str = "/"):
                 timeout=30,
             )
             ctype = r.headers.get("content-type", "text/html").split(";")[0]
-            return Response(r.content, status=r.status_code, mimetype=ctype)
+            content = r.content
+            # Rewrite CDN URLs so Browserbase can load them (unpkg blocked, jsdelivr works)
+            if ctype == "text/html":
+                content = content.replace(
+                    b"unpkg.com/force-graph@1.43.5",
+                    b"cdn.jsdelivr.net/npm/force-graph@1.43.5",
+                )
+            return Response(content, status=r.status_code, mimetype=ctype)
         except requests.RequestException as exc:
             last_exc = exc
 
