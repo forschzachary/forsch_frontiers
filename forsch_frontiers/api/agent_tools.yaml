@@ -1,0 +1,136 @@
+# Agent Tool Library
+# Available atomic tools for agent configuration.
+# Each tool is a single-responsibility function with clear parameters.
+# Risk levels: low (no approval), medium (logged), high (requires HITL approval)
+# Soft cap: 5 tools per agent, hard cap: 7
+
+tools:
+  # --- Calendar ---
+  - name: check_schedule
+    description: "Check calendar for events on a specific date"
+    source: google_calendar
+    risk_level: low
+    parameters:
+      date:
+        type: string
+        required: true
+        description: "YYYY-MM-DD date to check"
+
+  - name: book_event
+    description: "Create a new calendar event"
+    source: google_calendar
+    risk_level: medium
+    parameters:
+      title:
+        type: string
+        required: true
+        description: "Event title"
+      date:
+        type: string
+        required: true
+        description: "YYYY-MM-DD"
+      time:
+        type: string
+        required: false
+        description: "HH:MM (24h), omit for all-day"
+      duration_minutes:
+        type: integer
+        required: false
+        description: "Default 60"
+
+  - name: cancel_event
+    description: "Cancel/delete an existing calendar event"
+    source: google_calendar
+    risk_level: high
+    parameters:
+      event_id:
+        type: string
+        required: true
+        description: "Event ID to cancel"
+
+  # --- Smart Home ---
+  - name: get_thermostat
+    description: "Read current thermostat temperature and setting"
+    source: home_assistant
+    risk_level: low
+    parameters:
+      zone:
+        type: string
+        required: true
+        description: "Zone name (e.g. 'living_room', 'bedroom')"
+
+  - name: set_thermostat
+    description: "Set thermostat temperature for a zone"
+    source: home_assistant
+    risk_level: high
+    parameters:
+      zone:
+        type: string
+        required: true
+      temperature:
+        type: number
+        required: true
+        description: "Target temperature in Fahrenheit"
+
+  - name: toggle_lights
+    description: "Turn lights on or off in a zone"
+    source: home_assistant
+    risk_level: medium
+    parameters:
+      zone:
+        type: string
+        required: true
+      state:
+        type: string
+        required: true
+        description: "on or off"
+
+  # --- Shopping ---
+  - name: add_grocery_item
+    description: "Add an item to the household grocery list"
+    source: todoist
+    risk_level: low
+    parameters:
+      item:
+        type: string
+        required: true
+      quantity:
+        type: integer
+        required: false
+        description: "Default 1"
+
+  - name: search_recipes
+    description: "Search for recipes by ingredient or cuisine"
+    source: web
+    risk_level: low
+    parameters:
+      query:
+        type: string
+        required: true
+        description: "Ingredient, dish name, or cuisine type"
+
+  # --- Weather ---
+  - name: get_weather
+    description: "Get current weather and forecast for a location"
+    source: openweathermap
+    risk_level: low
+    parameters:
+      location:
+        type: string
+        required: true
+        description: "City name or zip code"
+
+  # --- Communication ---
+  - name: send_message
+    description: "Send a text message to a contact"
+    source: twilio
+    risk_level: high
+    parameters:
+      to:
+        type: string
+        required: true
+        description: "Phone number or contact name"
+      body:
+        type: string
+        required: true
+        description: "Message text"
