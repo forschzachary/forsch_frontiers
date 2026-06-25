@@ -1,0 +1,7 @@
+{
+ "title": "Agent Detail",
+ "route": "/agents/:agentId",
+ "icon": "bot",
+ "standard": 1,
+ "public": 0
+}
