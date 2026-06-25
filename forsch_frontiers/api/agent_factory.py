@@ -23,7 +23,8 @@ from forsch_frontiers.api._agent_box import box_get, box_post, require_login_and
 def generate(agent_id: str) -> Response:
     """Trigger Factory generate + verify. Proxies ``POST /agent-generate``."""
     require_login_and_ops()
-    return box_post("/agent-generate", json.dumps({"agent_id": agent_id}).encode())
+    from urllib.parse import urlencode
+    return box_post("/agent-generate", urlencode({"agent_id": agent_id}).encode())
 
 
 @frappe.whitelist(methods=["GET"])
