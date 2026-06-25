@@ -107,16 +107,18 @@ skeleton (Claude implements in Task 4).
 
 ---
 
-## Task 5 — Vue Config-tab skeleton · ⚡ Cerebras  *(CORRECTED: tools from list_tools, not agent_tools.yaml)*
+## Task 5 — Vue Config-tab skeleton · ⚡ Cerebras  *(CORRECTED: tools from list_tools, not agent_tools.yaml; LOCATION = forsch_frontiers Frappe page, NOT crm)*
 ```
-Scaffold the Agent Detail View route + Config tab skeleton in the CRM Vue frontend (static UI,
-no data binding yet).
+Scaffold the Agent Detail View as a forsch_frontiers FRAPPE PAGE (Config tab skeleton, static UI,
+no data binding yet). DECISION 2026-06-25: this is a Frappe page in forsch_frontiers, NOT a crm
+Vue SPA route. Canonical file: forsch_frontiers/forsch_frontiers/page/agent_detail/agent_detail.vue
+(+ the page boilerplate). Do NOT add an /agent-builder route to the crm repo.
 
 READ FIRST:
 - forsch_frontiers/docs/specs/agent-detail-view.md → "Tab 1: Config" (fields/layout) + Phase-1
   scope (Config tab ONLY — no chat/evals/connections/animation)
-- crm (forschzachary/crm) → follow its existing Vue component + routing conventions; cite the
-  example component you patterned after
+- forsch_frontiers existing Frappe pages → follow their .vue + page-registration conventions; cite
+  the example page you patterned after
 - ADK GenerateContentConfig — https://google.github.io/adk-docs/ (temperature / max_tokens / top_p);
   cite the doc so the fields match real ADK params
 
@@ -127,7 +129,7 @@ The tool palette is sourced from the `list_tools` endpoint (the ADK components t
 use agent_tools.yaml (that's a Phase-2 enrichment). Static/mock data only; mark TODO seams where
 Task 6 wires the Frappe proxies.
 
-VERIFY: the route renders in the CRM shell, no console errors. Scope = Config tab ONLY.
+VERIFY: the Frappe page renders in the desk shell, no console errors. Scope = Config tab ONLY.
 ```
 
 ---
