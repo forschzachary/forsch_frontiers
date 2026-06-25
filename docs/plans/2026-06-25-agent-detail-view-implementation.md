@@ -25,26 +25,28 @@ LiteLLM (models), Cloudflare tunnel (box JSON API).
 - **🔵 Claude** — Frappe/CRM front-end (Vue), cross-repo proxy glue, commits/Railway deploys, and reviewer of all output.
 
 ## Repos / surfaces touched
-- **Box** `/root/.hermes/workspace/adk`: `factory/` (exists), `builder/…/canvas_api.py` (exists, extend), `agent_specs/agents.yaml` (exists, extend schema), NEW verify wrapper, the box JSON API.
-- **forsch_frontiers** (Frappe app, Railway): `api/agent_config.py` + `api/agent_factory.py` (NEW proxies), `agent_tools.yaml` (exists), `docs/specs/agent-detail-view.md` (the spec).
+- **Box** `/root/.hermes/workspace/adk`: `factory/` + `builder/…/{editor,canvas_api}.py` + `agent_specs/agents.yaml` (all EXIST — wrap, don't rebuild), NEW `verify_agent` + status derivation, and 4 new JSON routes in `spikes/live-agent-graph/serve.py` (the box's authenticated HTTP entry).
+- **forsch_frontiers** (Frappe app, Railway): `api/agent_config.py` + `api/agent_factory.py` (NEW proxies), `docs/specs/{agent-detail-view,factory-reconciliation}.md`. (`agent_tools.yaml` is a Phase-2 UI concern — NOT used in Phase 1.)
 - **crm** (Vue): Agent Detail View route + Config tab component.
 - **Cloudflare tunnel**: expose the box JSON API (JSON only, Frappe-auth proxied).
 
 ## File structure (Phase 1)
 | File | Repo | Responsibility | Executor |
 |---|---|---|---|
-| `agent_specs/agents.yaml` (extend) | box | manifest schema: + temperature, max_tokens, instruction, tools[], per-tool risk | 🤖 |
-| `builder/…/canvas_api.py` or `agent_api.py` (new/extend) | box | the 6 JSON endpoints: get/save config, generate, verify-status, list-connections, models | ⚡ scaffold → 🤖 implement |
-| Factory verify wrapper | box | render → write package → `adk web` smoke → built/error | 🤖 |
-| `api/agent_config.py` | forsch_frontiers | Frappe-auth proxy: get/save config, models, connections | ⚡ scaffold → 🔵 implement |
-| `api/agent_factory.py` | forsch_frontiers | Frappe-auth proxy: generate + verify-status (role-gated, X-Graph-Secret server-side) | ⚡ scaffold → 🔵 implement |
-| Agent Detail View route + Config tab | crm | the Vue UI: fields, tool palette, Generate&Verify, status, dirty state | ⚡ skeleton → 🔵 implement |
+| `agent_specs/agents.yaml` (extend if needed) | box | manifest — `AgentSpec` already has model/instruction/tools/smoke_prompts/safety_level (models.py:15-37); confirm temp/max_tokens fields in Task 0 | 🤖 |
+| `serve.py` — 4 new JSON routes | box | the 6 Phase-1 endpoints: get_config, save_config, list_tools, list_models, generate, verify — mostly WRAP `editor.update_agent` + `cli.apply` + `canvas_api._toolbox`/build_view | ⚡ scaffold → 🤖 implement |
+| `verify_agent` + status (new `smoke.py` / `validation.py`) | box | G3+G7: subprocess import-check + best-effort `smoke_prompts` turn → derive blank/built/error from file existence + verify result | 🤖 |
+| `api/agent_config.py` | forsch_frontiers | Frappe-auth proxy: get_config, save_config, list_tools, list_models | ⚡ scaffold → 🔵 implement |
+| `api/agent_factory.py` | forsch_frontiers | Frappe-auth proxy: generate + verify (role-gated, X-Graph-Secret server-side) | ⚡ scaffold → 🔵 implement |
+| Agent Detail View route + Config tab | crm | Vue UI: fields, tool palette **from `list_tools` (ADK components toolbox)**, Generate&Verify, status, dirty state | ⚡ skeleton → 🔵 implement |
 
 ---
 
 ## Phase 1 — MVP: Config tab + Generate & Verify (independently shippable)
 
-**Definition of done:** in the live CRM, configure an agent (name/model/temp/max_tokens/instruction/3–5 atomic tools), click **Generate & Verify**, the box renders a real ADK package + smoke-tests it with `adk web`, and the node status flips to **built only after a verified run** (or **error**). No chat/evals/animation.
+**Definition of done:** in the live CRM, configure an agent (name/model/temp/max_tokens/instruction/3–5 tools **from the ADK components toolbox**), click **Generate & Verify**, the box wraps `cli.apply` to render a real ADK package then runs `verify_agent` (subprocess import-check + best-effort smoke turn), and the node status flips to **built only after a passing verify** (or **error**, with the log). No chat/evals/connections/animation.
+
+> **Grounded by** `docs/specs/factory-reconciliation.md` (verified against box code 2026-06-25): the Factory does ~80% already — `save_config`/`generate` WRAP existing functions; the only net-new logic is the config reader (G1), `verify_agent` (G3), and status derivation (G7). Phase-1 tools come from the **ADK components toolbox** (`_toolbox`/`list_tools`), NOT `agent_tools.yaml` (Phase 2 UI). `list_connections` is Phase 2 (Connections tab).
 
 ### Task 0 — Reconciliation (gate) · 🤖 Hubert (MiMo 2.5)
 **Files:** read `factory/src/forsch/adk_factory/renderer.py`, `…/cli.py`, `…/models.py`, `builder/src/forsch/adk_builder/canvas_api.py`, `agent_specs/agents.yaml`, `docs/AGENT_FACTORY_SPEC.md`. Write `docs/specs/factory-reconciliation.md`.
@@ -55,17 +57,18 @@ LiteLLM (models), Cloudflare tunnel (box JSON API).
 **Verify:** `factory-reconciliation.md` committed; 🔵 Claude reviews it before any Factory task starts. **This unblocks Tasks 1, 2, 4.**
 
 ### Task 1 — Scaffold the box JSON API · ⚡ Cerebras (then 🤖 owns)
-**Files:** `builder/…/canvas_api.py` (extend) or new `agent_api.py`.
-- [ ] From Task 0's contract, scaffold the 6 endpoint handlers as typed stubs returning shaped fake JSON (get_config, save_config, generate, verify_status, list_connections, list_models).
+**Files:** `spikes/live-agent-graph/serve.py` (add 4 new routes alongside the existing authenticated handlers).
+- [ ] From Task 0's contract, scaffold the 6 Phase-1 endpoint handlers as typed stubs returning shaped fake JSON: `get_config`, `save_config`, `list_tools`, `list_models`, `generate`, `verify`. (No `list_connections` — that's Phase 2.)
 **Verify:** `curl` each stub returns the contracted JSON shape.
 
 ### Task 2 — Generate & Verify backbone · 🤖 Hubert (MiMo 2.5)
-**Files:** the verify wrapper + `generate`/`verify_status` handlers from Task 1; `agents.yaml` writes.
-- [ ] save_config writes the agent's entry into `agents.yaml` (extended schema).
-- [ ] generate runs `render_agent_package(spec)` → writes `web_agents/<id>/` package.
-- [ ] verify runs an `adk web` smoke (boot the package, confirm it loads + the agent responds to a trivial turn); capture pass/fail + logs.
-- [ ] status flips to **built** only on smoke-pass; **error** (with the log) on fail. (Phantom-fix gate.)
-**Verify:** generate the existing `shelby` agent end-to-end on the box → smoke passes → status=built; break the instruction → status=error with a real log line.
+**Files:** new `factory/…/smoke.py` (or extend `validation.py`) for `verify_agent` + status; wire the `generate`/`verify`/`get_config`/`save_config` handlers from Task 1.
+- [ ] `save_config` → **wrap `editor.update_agent`** (editor.py:32 — already writes agents.yaml + regenerates both files). Net-new: nothing.
+- [ ] `generate` → **wrap `cli.apply`** (cli.py:111 — already validates + deploy-gates + writes the 2 files). Net-new: nothing.
+- [ ] `get_config` → **G1: new config reader** (`build_view` strips `package`/`safety_level`/`purpose`/`smoke_prompts`; read the full block from `agents.yaml`).
+- [ ] `verify_agent` → **G3: net-new** — subprocess import check (`python -c "from forsch.agent_<id>.agent import root_agent; print(root_agent.name)"`), then a best-effort `smoke_prompts` turn if creds are present (graceful skip if not). NOT in-process.
+- [ ] **G7: status derivation** — blank (no package) / built (package exists + verify passed) / error (verify failed; keep the log). Status flips to **built only on a passing verify** — never on save. (Phantom-fix gate.)
+**Verify:** generate the existing `shelby` agent end-to-end on the box → import-check passes → status=built; break the instruction/tool → status=error with a real log line.
 
 ### Task 3 — Scaffold Frappe proxies · ⚡ Cerebras (then 🔵 owns)
 **Files:** `forsch_frontiers/api/agent_config.py`, `forsch_frontiers/api/agent_factory.py`.
@@ -79,16 +82,16 @@ LiteLLM (models), Cloudflare tunnel (box JSON API).
 
 ### Task 5 — Scaffold the Config tab · ⚡ Cerebras (then 🔵 owns)
 **Files:** `crm` — Agent Detail View route + Config tab component skeleton.
-- [ ] Fields: name, model dropdown, temperature slider (labeled zones), max_tokens, instruction textarea, tools list + "Add Tool", status pill, Generate&Verify button, Save.
+- [ ] Fields: name, model dropdown, temperature slider (labeled zones), max_tokens, instruction textarea, tools list + "Add Tool" **(palette sourced from `list_tools` = the ADK components toolbox, NOT `agent_tools.yaml`)**, status pill, Generate&Verify button, Save.
 **Verify:** route renders in the CRM shell with the static skeleton, no console errors.
 
 ### Task 6 — Implement the Config tab · 🔵 Claude
-**Files:** same as Task 5; reads `forsch_frontiers/agent_tools.yaml`.
-- [ ] Bind fields to the Frappe proxies (load/save config). Tool palette sourced from `agent_tools.yaml` with the soft-cap-5/hard-cap-7 warning. Dirty-state dot. Generate&Verify calls the proxy, streams/polls status, renders built/error with the log.
-**Verify:** e2e in the live CRM — configure `shelby` → Generate&Verify → status flips to **built** (backed by the real box smoke), tools capped, dirty state correct.
+**Files:** same as Task 5; the tool palette comes from the `list_tools` proxy (ADK components toolbox), NOT `agent_tools.yaml`.
+- [ ] Bind fields to the Frappe proxies (load/save config). Tool palette sourced from `list_tools` with a soft-cap-5 / hard-cap-7 count warning. Dirty-state dot. Generate&Verify calls the proxy, polls `verify` status, renders built/error with the log.
+**Verify:** e2e in the live CRM — configure `shelby` → Generate&Verify → status flips to **built** (backed by the real box import-check/smoke), tool count capped, dirty state correct.
 
 ### Task 7 — MVP end-to-end verification · 🔵 Claude + 🤖 Hubert · **★ MVP MILESTONE — shippable**
-- [ ] Full loop in the live CRM: configure → Generate&Verify → built, with box-side evidence (the `adk web` smoke log) and a UI screenshot. Confirm error path too.
+- [ ] Full loop in the live CRM: configure → Generate&Verify → built, with box-side evidence (the `verify_agent` import-check/smoke log) and a UI screenshot. Confirm error path too.
 **Verify:** documented evidence (UI + box log) that a real, verified ADK package was produced from the cockpit. Ship/announce here.
 
 ---
@@ -96,7 +99,8 @@ LiteLLM (models), Cloudflare tunnel (box JSON API).
 ## Phase 2 — Chat · Connections · Evals · live status (mapped)
 **Objective:** make the agent usable + governed from its detail view.
 - **Chat tab** 🤖(box chat proxy: isolated conversation with the agent, tool calls inline, "Save to Evalset") + 🔵(Vue).
-- **Connections tab** 🤖(sub_agents wiring writes to `agents.yaml` → regenerate) + 🔵(Vue).
+- **Connections tab** 🤖(`list_connections` endpoint + sub_agents wiring writes to `agents.yaml` → regenerate) + 🔵(Vue).
+- **Richer tool palette** 🔵 — layer `agent_tools.yaml` (parameter schemas, risk levels, HITL flags) on top of the Phase-1 `list_tools` registry.
 - **Evals tab** 🤖(`adk eval` on the box, JSON run+stream endpoint, trajectory+response scores, diff) + 🔵(Vue list/diff). *Open Q resolved: evals run `adk eval` on the box, never the browser.*
 - **Live status promotion** 🤖 (what makes an agent "live" = deployed to a surface; define + wire).
 Each sub-tab gets its own bite-sized plan when Phase 1 lands.
@@ -120,7 +124,9 @@ Task 0 (recon, 🤖) ──unblocks──▶ Task 1 (⚡) ──▶ Task 2 (🤖
 - Box backbone (2) and Frappe proxies (4) can proceed in parallel once their scaffolds land.
 - Config tab (6) integrates last; Task 7 proves the loop.
 
-## Open items to confirm during Task 0
-- Exact `AgentSpec` schema vs our Config fields (any gaps to add to `agents.yaml`).
-- Whether `canvas_api.py` is the right host for the 6 endpoints or a new `agent_api.py`.
-- How the box JSON API is exposed (reuse the Cloudflare tunnel, JSON-only).
+## Task 0 — COMPLETE (resolved in `docs/specs/factory-reconciliation.md`, verified against box code 2026-06-25)
+- `AgentSpec` (models.py:15-37) already carries model/instruction/tools/smoke_prompts/safety_level/purpose/package; confirm temp/max_tokens land in the schema during Task 2's config-reader work.
+- Box host = **`serve.py`** (4 new JSON routes wrapping `editor`/`cli`/`canvas_api`) — not a new server.
+- Box JSON API exposed via the existing **Cloudflare tunnel, JSON-only, Frappe-auth proxied**.
+- Tool source = **ADK components toolbox** (`_toolbox`/`list_tools`); `agent_tools.yaml` deferred to Phase 2.
+- Verified: `save_config`/`generate` WRAP existing functions; net-new = config reader (G1), `verify_agent` (G3), status derivation (G7).
