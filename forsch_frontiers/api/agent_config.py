@@ -53,14 +53,13 @@ def save(
 ) -> Response:
     """Save an agent's config + regenerate. Proxies ``POST /agent-config``."""
     require_login_and_ops()
-    from urllib.parse import urlencode
     payload: dict = {"agent_id": agent_id}
     if instruction is not None:
         payload["instruction"] = instruction
     if tools is not None:
-        payload["tools"] = tools  # comma-separated string or JSON; box parses
+        payload["tools"] = tools
     if model is not None:
         payload["model"] = model
     if group is not None:
         payload["group"] = group
-    return box_post("/agent-config", urlencode(payload).encode())
+    return box_post("/agent-config", json.dumps(payload).encode())

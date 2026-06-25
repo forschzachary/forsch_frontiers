@@ -46,7 +46,7 @@ def _request(method: str, path: str, body: bytes | None = None) -> Response:
 
     headers = {"X-Graph-Secret": _GRAPH_SECRET}
     if method == "POST":
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+        headers["Content-Type"] = "application/json"
 
     last_exc = None
     for _ in range(3):  # Cold tunnel connection can reset; retry briefly.
