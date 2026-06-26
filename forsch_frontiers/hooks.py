@@ -21,6 +21,8 @@ fixtures = [
     {"dt": "Custom Field", "filters": [["fieldname", "in", ["ff_related_records_html", "twenty_person_id"]]]},
     {"dt": "CRM Form Script", "filters": [["name", "like", "Forsch%"]]},
     {"dt": "CRM Fields Layout", "filters": [["name", "like", "CRM Lead%"]]},
+    # Workspace with Agent Builder shortcut (Frappe fixture lifecycle)
+    {"dt": "Workspace", "filters": [["name", "=", "Frappe CRM"]]},
     # NOTE: Listmonk/Postiz are embedded as in-app CRM views (crm fork routes
     # /newsletters, /social) — the old /listmonk + /postiz Web Pages and the Desk
     # "Marketing" Workspace are removed.

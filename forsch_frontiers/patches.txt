@@ -4,3 +4,4 @@
 [post_model_sync]
 # Patches executed after doctypes are migrated
 forsch_frontiers.patches.v0_0.add_subscription_pair_unique_index
+forsch_frontiers.patches.add_agent_builder_shortcut
