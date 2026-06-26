@@ -91,6 +91,14 @@ def graph_embed(path: str = "/"):
     if frappe.session.user == "Guest":
         raise frappe.PermissionError("Login required")
 
+    # Frappe doesn't pass query params to whitelisted functions on POST.
+    # Read the path from the request URL directly as a fallback.
+    if path == "/":
+        from urllib.parse import urlparse, parse_qs
+        qs = parse_qs(urlparse(frappe.request.url).query)
+        if "path" in qs:
+            path = qs["path"][0]
+
     if not path.startswith("/"):
         path = "/" + path
     if not any(path == p or path.startswith(p) for p in _ALLOWED_PREFIXES):
