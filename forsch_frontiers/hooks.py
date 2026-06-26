@@ -55,6 +55,13 @@ scheduler_events = {
 # the second fire still sees it empty and creates another GP Task).
 update_website_context = ["forsch_frontiers.permissions.update_website_context"]
 
+# CSRF: graph_embed is a reverse-proxy endpoint. The browser calls it from a
+# cross-origin iframe (graph server HTML inside CRM). Session cookie authenticates
+# the user, but the CSRF token is not available in the embed context.
+csrf_exempt = [
+    "forsch_frontiers.api.cockpit.graph_embed",
+]
+
 doc_events = {
     "GP Task": {
         "on_update": "forsch_frontiers.sync.agent_graph._sync_gp_to_agent_task",
